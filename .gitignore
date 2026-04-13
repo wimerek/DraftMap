@@ -13,5 +13,16 @@ venv/
 .DS_Store
 Thumbs.db
 
-# Data (large files — push manually or via script)
-# data/*.csv   ← uncomment if you want to exclude data from git
+# Excel source files — not needed by the app
+*.xlsx
+*.xls
+
+# Dev/sandbox HTML files — only the mockup-v2 template is used by the app
+draftmap-mockup.html
+draftmap-sandbox.html
+draftmap-design-test.html
+
+# Project planning docs — local use only
+DraftMap - ChatGPT Prompts.md
+DraftMap - Claude Efficiency Guide.md
+DraftMap - Project Plan.md

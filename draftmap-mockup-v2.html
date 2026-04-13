@@ -86,6 +86,69 @@
         .legend-line-1 { color: #101820; font-weight: 700; font-size: 10px; }
         .legend-line-2 { color: #4A6274; font-size: 9px; font-weight: 500; }
         .legend-line-3 { color: #7B8C9A; font-size: 8.5px; }
+
+        /* ── Zoom control widget (Google Maps style) ── */
+        .zoom-control {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            background: rgba(255,255,255,0.95);
+            border: 1px solid #C8D0D8;
+            border-radius: 8px;
+            padding: 8px 6px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.12);
+            z-index: 20;
+            user-select: none;
+        }
+        .zoom-btn {
+            width: 28px;
+            height: 28px;
+            border: 1px solid #C8D0D8;
+            background: #FFFFFF;
+            border-radius: 5px;
+            font-size: 18px;
+            font-weight: 400;
+            line-height: 1;
+            cursor: pointer;
+            color: #0B2239;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+            font-family: 'Inter', sans-serif;
+        }
+        .zoom-btn:hover:not(:disabled) {
+            background: #0B2239;
+            color: #FFFFFF;
+            border-color: #0B2239;
+        }
+        .zoom-btn:disabled {
+            opacity: 0.25;
+            cursor: default;
+        }
+        .zoom-track {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 0;
+        }
+        .zoom-seg {
+            width: 14px;
+            height: 9px;
+            border-radius: 2px;
+            background: #DDE2E6;
+            transition: background 0.2s, transform 0.15s;
+            cursor: default;
+        }
+        .zoom-seg.active {
+            background: #0B2239;
+            transform: scaleX(1.15);
+        }
     </style>
 </head>
 <body>
@@ -123,6 +186,17 @@
 
         <div class="chart-wrapper">
             <svg id="chart"></svg>
+            <!-- Google Maps-style zoom widget: + / scale segments / - -->
+            <div class="zoom-control" id="zoom-widget">
+                <button class="zoom-btn" id="zoom-in-btn" title="Zoom in (see more detail)">+</button>
+                <div class="zoom-track" title="Zoom level">
+                    <!-- Segments ordered top-to-bottom = most zoomed in → least -->
+                    <div class="zoom-seg" data-level="2" title="Players"></div>
+                    <div class="zoom-seg" data-level="1" title="Roles"></div>
+                    <div class="zoom-seg" data-level="0" title="Overview"></div>
+                </div>
+                <button class="zoom-btn" id="zoom-out-btn" title="Zoom out (overview)">−</button>
+            </div>
         </div>
     </div>
 
@@ -3688,7 +3762,7 @@
             if (legend) legend.style.display = currentZoom === 'players' ? 'flex' : 'none';
         }
 
-        // ── Controls ──────────────────────────────────────────────────────────
+        // ── Controls (button clicks) ──────────────────────────────────────────
         document.querySelectorAll('[data-view]').forEach(btn => {
             btn.addEventListener('click', e => {
                 document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
@@ -3702,12 +3776,108 @@
             btn.addEventListener('click', e => {
                 document.querySelectorAll('[data-zoom]').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
-                currentZoom = e.target.dataset.zoom;
+                currentZoom  = e.target.dataset.zoom;
+                zoomLevel    = ZOOM_STATES.indexOf(currentZoom);
+                updateZoomControl(); // keep widget scale in sync
                 drawChart();
             });
         });
 
+        // ── Zoom: wheel + pinch → progressively reveal detail ─────────────────
+        // Buttons above are fallback / indicators. Primary trigger is natural zoom gesture.
+        // Zoom levels: 0 = Overview, 1 = Roles, 2 = Players
+        const ZOOM_STATES = ['overview', 'roles', 'players'];
+        let zoomLevel = 0;
+
+        // Debounce: wait for zoom gestures to settle before redrawing
+        let zoomTimer = null;
+        const ZOOM_DEBOUNCE_MS = 120;
+
+        function updateZoomControl() {
+            // Highlight the segment matching the current zoom level
+            document.querySelectorAll('.zoom-seg').forEach(seg => {
+                seg.classList.toggle('active', parseInt(seg.dataset.level) === zoomLevel);
+            });
+            // Disable + when fully zoomed in, - when fully zoomed out
+            document.getElementById('zoom-in-btn').disabled  = (zoomLevel >= 2);
+            document.getElementById('zoom-out-btn').disabled = (zoomLevel <= 0);
+        }
+
+        function applyZoomLevel(newLevel) {
+            newLevel = Math.max(0, Math.min(2, newLevel));
+            if (newLevel === zoomLevel) return;
+            zoomLevel   = newLevel;
+            currentZoom = ZOOM_STATES[zoomLevel];
+            // Keep top zoom-mode buttons in sync
+            document.querySelectorAll('[data-zoom]').forEach(b => {
+                b.classList.toggle('active', b.dataset.zoom === currentZoom);
+            });
+            // Keep the widget scale indicator in sync
+            updateZoomControl();
+            // Debounce the redraw so rapid scroll doesn't hammer the renderer
+            clearTimeout(zoomTimer);
+            zoomTimer = setTimeout(drawChart, ZOOM_DEBOUNCE_MS);
+        }
+
+        // Desktop: mouse-wheel zoom on the chart wrapper
+        const chartWrapper = document.querySelector('.chart-wrapper');
+        // Desktop: scroll wheel over the chart zooms; outside it scrolls the page normally.
+        // Uses a hover flag so we don't hijack page scroll when cursor isn't on the chart.
+        let cursorOverChart = false;
+        chartWrapper.addEventListener('mouseenter', () => { cursorOverChart = true; });
+        chartWrapper.addEventListener('mouseleave', () => { cursorOverChart = false; });
+
+        window.addEventListener('wheel', e => {
+            if (!cursorOverChart) return; // let page scroll when cursor is elsewhere
+            e.preventDefault();
+            const direction = e.deltaY < 0 ? 1 : -1; // scroll up = zoom in
+            applyZoomLevel(zoomLevel + direction);
+        }, { passive: false });
+
+        // Mobile: pinch-to-zoom on the chart wrapper
+        let pinchStartDist = null;
+        let pinchStartLevel = 0;
+
+        chartWrapper.addEventListener('touchstart', e => {
+            if (e.touches.length === 2) {
+                pinchStartDist  = Math.hypot(
+                    e.touches[1].clientX - e.touches[0].clientX,
+                    e.touches[1].clientY - e.touches[0].clientY
+                );
+                pinchStartLevel = zoomLevel;
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        chartWrapper.addEventListener('touchmove', e => {
+            if (e.touches.length !== 2 || pinchStartDist === null) return;
+            const dist  = Math.hypot(
+                e.touches[1].clientX - e.touches[0].clientX,
+                e.touches[1].clientY - e.touches[0].clientY
+            );
+            const ratio = dist / pinchStartDist;
+            // Each 30% spread/pinch crosses a zoom threshold
+            const delta = Math.round((ratio - 1) / 0.3);
+            applyZoomLevel(pinchStartLevel + delta);
+            e.preventDefault();
+        }, { passive: false });
+
+        chartWrapper.addEventListener('touchend', e => {
+            if (e.touches.length < 2) pinchStartDist = null;
+        });
+
+        // ── Zoom widget + / − buttons ──────────────────────────────────────────
+        document.getElementById('zoom-in-btn').addEventListener('click', () => {
+            applyZoomLevel(zoomLevel + 1);
+            drawChart(); // apply immediately (no debounce for explicit button click)
+        });
+        document.getElementById('zoom-out-btn').addEventListener('click', () => {
+            applyZoomLevel(zoomLevel - 1);
+            drawChart();
+        });
+
         drawChart();
+        updateZoomControl(); // set initial widget state
     </script>
 </body>
 </html>
