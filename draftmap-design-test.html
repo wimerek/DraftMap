@@ -1,0 +1,771 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DraftMap — Design Test</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5EFE4;
+            color: #101820;
+            padding: 24px;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        header { margin-bottom: 32px; }
+        .app-title { font-size: 28px; font-weight: 800; color: #0B2239; margin-bottom: 4px; text-transform: uppercase; letter-spacing: -0.5px; }
+        .app-tagline { font-size: 14px; color: #4A6274; font-weight: 500; }
+        .controls {
+            display: flex; gap: 32px; align-items: center;
+            margin-bottom: 24px; flex-wrap: wrap;
+        }
+        .button-group {
+            display: flex; gap: 8px;
+            background: #DDE2E6; padding: 4px; border-radius: 8px;
+        }
+        .btn {
+            padding: 8px 16px; border: none; border-radius: 4px;
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease; background: transparent;
+            color: #4A6274; font-family: 'Inter', sans-serif;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn.active {
+            background: #0B2239;
+            color: #FFFFFF;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn:hover:not(.active) {
+            color: #0B2239;
+            background: rgba(11, 34, 57, 0.05);
+        }
+        .year-label { font-size: 13px; color: #4A6274; font-weight: 700; text-transform: uppercase; }
+        .chart-wrapper {
+            background: #FFFFFF; border-radius: 8px; padding: 24px;
+            overflow-x: auto; position: relative;
+            border: 1px solid #DDE2E6;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        svg { display: block; }
+        .tooltip {
+            position: absolute; background: #101820;
+            border: 1px solid #4A6274; border-radius: 4px;
+            padding: 12px; font-size: 12px; z-index: 1000;
+            pointer-events: none; max-width: 200px;
+            color: #FFFFFF;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+        .tooltip-line { margin: 4px 0; color: #FFFFFF; }
+        .tooltip-label { color: #AAB8C2; font-size: 11px; text-transform: uppercase; font-weight: 600; }
+        .players-legend {
+            display: none; flex-direction: column; gap: 4px;
+            padding: 12px 16px; background: #FFFFFF;
+            border-left: 4px solid #FF4D00;
+            border-radius: 4px;
+            font-size: 11px; margin-bottom: 16px;
+            min-width: 240px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .players-legend-title {
+            color: #FF4D00; font-weight: 800; font-size: 11px;
+            letter-spacing: 1.5px; text-transform: uppercase;
+            margin-bottom: 6px; border-bottom: 1px solid #F0F0F0;
+            padding-bottom: 6px;
+        }
+        .players-legend-row { display: flex; align-items: flex-start; gap: 8px; }
+        .legend-dot {
+            width: 10px; height: 10px; border-radius: 2px;
+            background: #0B2239; border: 1px solid #FFFFFF; flex-shrink: 0;
+        }
+        .legend-lines { display: flex; flex-direction: column; gap: 2px; }
+        .legend-line-1 { color: #101820; font-weight: 700; font-size: 10px; }
+        .legend-line-2 { color: #4A6274; font-size: 9px; font-weight: 500; }
+        .legend-line-3 { color: #7B8C9A; font-size: 8.5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="app-title">DraftMap</div>
+            <div class="app-tagline">NFL Draft at a glance. Find your sleeper.</div>
+        </header>
+
+        <div class="controls">
+            <div class="button-group">
+                <button class="btn active" data-view="all">All Positions</button>
+                <button class="btn" data-view="offense">Offense</button>
+                <button class="btn" data-view="defense">Defense</button>
+            </div>
+            <div class="button-group">
+                <button class="btn active" data-zoom="overview">Overview</button>
+                <button class="btn" data-zoom="roles">Roles</button>
+                <button class="btn" data-zoom="players">Players</button>
+            </div>
+            <div class="year-label">2026 Draft Class — Design Test</div>
+        </div>
+
+        <div id="players-legend" class="players-legend">
+            <div class="players-legend-title">Player Legend</div>
+            <div class="players-legend-row">
+                <div class="legend-dot"></div>
+                <div class="legend-lines">
+                    <div class="legend-line-1">Player Name</div>
+                    <div class="legend-line-2">Round &nbsp;·&nbsp; Pick &nbsp;·&nbsp; Height &nbsp;·&nbsp; Weight</div>
+                    <div class="legend-line-3">Strength 1 &nbsp;·&nbsp; Strength 2 &nbsp;·&nbsp; Strength 3</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <svg id="chart"></svg>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip" style="display:none;"></div>
+
+    <script>
+        // ── FAKE PLAYER DATA (design test only — not real prospects) ───────────
+        const players = [
+            // ── ROUND 1 ──────────────────────────────────────────────────────
+            // EDGE
+            { name: "Devon Mills",    pos: "EDGE", rd: 1, rank: 4,  height: "6-4", weight: 258, role: "Speed Rusher",       s1: "Get Off",       s2: "Bend",          s3: "Athleticism" },
+            { name: "Kyle Nash",      pos: "EDGE", rd: 1, rank: 15, height: "6-5", weight: 265, role: "Power Rusher",       s1: "Frame",         s2: "Run Defense",   s3: "Pass Rush Skill" },
+            // DT
+            { name: "Marcus Ross",    pos: "DT",   rd: 1, rank: 6,  height: "6-3", weight: 308, role: "Inside Pass Rusher", s1: "Pass Rush",     s2: "Get Off",       s3: "Hand Strength" },
+            { name: "Tyson Gray",     pos: "DT",   rd: 1, rank: 17, height: "6-2", weight: 296, role: "Balanced",           s1: "Leverage",      s2: "Athleticism",   s3: "Run Stuffing" },
+            // LB
+            { name: "Caleb Hunt",     pos: "LB",   rd: 1, rank: 10, height: "6-2", weight: 236, role: "Range/Coverage",    s1: "Coverage",      s2: "Range",         s3: "Instincts" },
+            { name: "Derek Miles",    pos: "LB",   rd: 1, rank: 21, height: "6-1", weight: 231, role: "Power/Tackling",    s1: "Tackling",      s2: "Run Defense",   s3: "Athleticism" },
+            // CB
+            { name: "Jordan Nash",    pos: "CB",   rd: 1, rank: 8,  height: "6-1", weight: 196, role: "Outside",           s1: "Coverage",      s2: "Athleticism",   s3: "Ball Skills" },
+            { name: "Tyler Vance",    pos: "CB",   rd: 1, rank: 14, height: "5-11",weight: 185, role: "Nickel/Slot",       s1: "Fluidity",      s2: "Coverage",      s3: "Tackling" },
+            // S
+            { name: "Marcus Hill",    pos: "S",    rd: 1, rank: 12, height: "6-1", weight: 204, role: "Free Safety",       s1: "Range",         s2: "Ball Skills",   s3: "Coverage" },
+            { name: "Devon Ray",      pos: "S",    rd: 1, rank: 23, height: "6-2", weight: 210, role: "Balanced",           s1: "Run Defense",   s2: "Instincts",     s3: "Athleticism" },
+            // RB
+            { name: "Jamal King",     pos: "RB",   rd: 1, rank: 5,  height: "5-11",weight: 210, role: "Speed",             s1: "Burst",         s2: "Vision",        s3: "Athleticism" },
+            { name: "Derek Foster",   pos: "RB",   rd: 1, rank: 20, height: "6-0", weight: 220, role: "Power",             s1: "Contact Balance",s2: "Vision",       s3: "Pass Protection" },
+            // WR
+            { name: "Nathan Pierce",  pos: "WR",   rd: 1, rank: 7,  height: "6-0", weight: 190, role: "Speed/Quickness",   s1: "Straight-line Speed",s2: "YAC",      s3: "Route Running" },
+            { name: "Carlos Webb",    pos: "WR",   rd: 1, rank: 16, height: "6-3", weight: 215, role: "Size/Possession",   s1: "Hands",         s2: "Route Running", s3: "Athleticism" },
+            // TE
+            { name: "Kyle Turner",    pos: "TE",   rd: 1, rank: 9,  height: "6-4", weight: 248, role: "Receiving",         s1: "Route Running", s2: "Hands",         s3: "YAC" },
+            { name: "Austin Reed",    pos: "TE",   rd: 1, rank: 24, height: "6-5", weight: 255, role: "Balanced",           s1: "Athleticism",   s2: "Blocking",      s3: "Hands" },
+            // OT
+            { name: "Nathan Berg",    pos: "OT",   rd: 1, rank: 2,  height: "6-6", weight: 318, role: "Power",             s1: "Run Blocking",  s2: "Anchor",        s3: "Hand Technique" },
+            { name: "Chris Wall",     pos: "OT",   rd: 1, rank: 11, height: "6-5", weight: 310, role: "Balanced",           s1: "Pass Protection",s2: "Mobility",     s3: "Run Blocking" },
+            // IOL
+            { name: "Aaron Cross",    pos: "IOL",  rd: 1, rank: 13, height: "6-4", weight: 316, role: "Power Run Game",    s1: "Run Blocking",  s2: "Anchor",        s3: "Hand Technique" },
+            { name: "Mike Finley",    pos: "IOL",  rd: 1, rank: 19, height: "6-3", weight: 308, role: "Zone/Agility",      s1: "Mobility",      s2: "Pass Protection",s3: "Hand Technique" },
+            // QB
+            { name: "Tyler Brooks",   pos: "QB",   rd: 1, rank: 3,  height: "6-3", weight: 226, role: "Dual-Threat",       s1: "Mobility",      s2: "Arm Talent",    s3: "Decision Making" },
+            { name: "Marcus Cole",    pos: "QB",   rd: 1, rank: 18, height: "6-4", weight: 232, role: "Pocket Passer",     s1: "Accuracy",      s2: "Pocket Presence",s3: "Arm Talent" },
+
+            // ── ROUND 2 ──────────────────────────────────────────────────────
+            // EDGE
+            { name: "Devon Clark",    pos: "EDGE", rd: 2, rank: 35, height: "6-3", weight: 252, role: "Balanced",           s1: "Pass Rush Skill",s2: "Athleticism", s3: "Run Defense" },
+            { name: "Kyle Owens",     pos: "EDGE", rd: 2, rank: 49, height: "6-4", weight: 248, role: "Speed Rusher",       s1: "Get Off",       s2: "Bend",          s3: "Athleticism" },
+            { name: "Jalen Ford",     pos: "EDGE", rd: 2, rank: 62, height: "6-5", weight: 270, role: "Power Rusher",       s1: "Frame",         s2: "Run Defense",   s3: "Pass Rush Skill" },
+            // DT
+            { name: "Tyler Banks",    pos: "DT",   rd: 2, rank: 41, height: "6-2", weight: 295, role: "Inside Pass Rusher", s1: "Pass Rush",     s2: "Leverage",      s3: "Hand Strength" },
+            { name: "Marcus West",    pos: "DT",   rd: 2, rank: 54, height: "6-3", weight: 305, role: "Balanced",           s1: "Athleticism",   s2: "Run Stuffing",  s3: "Leverage" },
+            { name: "Aaron Lake",     pos: "DT",   rd: 2, rank: 67, height: "6-4", weight: 322, role: "Run Stuffer",        s1: "Run Stuffing",  s2: "Anchor",        s3: "Frame" },
+            // LB
+            { name: "Caleb Marsh",    pos: "LB",   rd: 2, rank: 43, height: "6-1", weight: 233, role: "Balanced",           s1: "Instincts",     s2: "Tackling",      s3: "Athleticism" },
+            { name: "Ryan Hart",      pos: "LB",   rd: 2, rank: 56, height: "6-2", weight: 240, role: "Power/Tackling",    s1: "Tackling",      s2: "Run Defense",   s3: "Blitzing" },
+            { name: "Zach Park",      pos: "LB",   rd: 2, rank: 68, height: "6-0", weight: 228, role: "Range/Coverage",    s1: "Coverage",      s2: "Range",         s3: "Instincts" },
+            // CB
+            { name: "Jordan Cole",    pos: "CB",   rd: 2, rank: 44, height: "6-0", weight: 193, role: "Balanced",           s1: "Athleticism",   s2: "Coverage",      s3: "Ball Skills" },
+            { name: "Blake Shaw",     pos: "CB",   rd: 2, rank: 57, height: "6-1", weight: 198, role: "Outside",           s1: "Coverage",      s2: "Tackling",      s3: "Athleticism" },
+            { name: "Marcus Stone",   pos: "CB",   rd: 2, rank: 69, height: "5-10",weight: 182, role: "Nickel/Slot",       s1: "Fluidity",      s2: "Ball Skills",   s3: "Coverage" },
+            // S
+            { name: "Devon Gray",     pos: "S",    rd: 2, rank: 46, height: "6-2", weight: 212, role: "Strong Safety",     s1: "Run Defense",   s2: "Instincts",     s3: "Tackling" },
+            { name: "Kyle Evans",     pos: "S",    rd: 2, rank: 58, height: "6-0", weight: 198, role: "Free Safety",       s1: "Range",         s2: "Ball Skills",   s3: "Coverage" },
+            { name: "Nate Cross",     pos: "S",    rd: 2, rank: 70, height: "6-1", weight: 205, role: "Balanced",           s1: "Coverage",      s2: "Athleticism",   s3: "Instincts" },
+            // RB
+            { name: "Chris Hall",     pos: "RB",   rd: 2, rank: 36, height: "5-10",weight: 216, role: "Power",             s1: "Contact Balance",s2: "Vision",       s3: "Pass Protection" },
+            { name: "Nate Moore",     pos: "RB",   rd: 2, rank: 50, height: "5-9", weight: 195, role: "Speed",             s1: "Burst",         s2: "Athleticism",   s3: "Receiving" },
+            { name: "Adrian York",    pos: "RB",   rd: 2, rank: 63, height: "6-0", weight: 218, role: "Balanced",           s1: "Vision",        s2: "Receiving",     s3: "Pass Protection" },
+            // WR
+            { name: "Marcus Brown",   pos: "WR",   rd: 2, rank: 38, height: "6-2", weight: 208, role: "Balanced",           s1: "Route Running", s2: "Hands",         s3: "YAC" },
+            { name: "Caleb Fox",      pos: "WR",   rd: 2, rank: 52, height: "5-10",weight: 180, role: "Speed/Quickness",   s1: "Short Area Quickness",s2: "Straight-line Speed",s3: "YAC" },
+            { name: "Sam Thomas",     pos: "WR",   rd: 2, rank: 64, height: "6-3", weight: 218, role: "Size/Possession",   s1: "Hands",         s2: "Route Running", s3: "Athleticism" },
+            // TE
+            { name: "Tyler Mason",    pos: "TE",   rd: 2, rank: 40, height: "6-5", weight: 250, role: "Balanced",           s1: "Athleticism",   s2: "Hands",         s3: "Route Running" },
+            { name: "James Logan",    pos: "TE",   rd: 2, rank: 55, height: "6-3", weight: 242, role: "Receiving",         s1: "Route Running", s2: "YAC",           s3: "Hands" },
+            { name: "Cole Wright",    pos: "TE",   rd: 2, rank: 65, height: "6-6", weight: 262, role: "Blocking",          s1: "Blocking",      s2: "Athleticism",   s3: "Hand Technique" },
+            // OT
+            { name: "Jake Adams",     pos: "OT",   rd: 2, rank: 37, height: "6-5", weight: 312, role: "Balanced",           s1: "Pass Protection",s2: "Run Blocking", s3: "Hand Technique" },
+            { name: "Aaron Stone",    pos: "OT",   rd: 2, rank: 51, height: "6-6", weight: 324, role: "Power",             s1: "Run Blocking",  s2: "Anchor",        s3: "Frame" },
+            { name: "Brice Quinn",    pos: "OT",   rd: 2, rank: 62, height: "6-4", weight: 305, role: "Zone/Agility",      s1: "Mobility",      s2: "Pass Protection",s3: "Hand Technique" },
+            // IOL
+            { name: "Chris Lee",      pos: "IOL",  rd: 2, rank: 39, height: "6-3", weight: 308, role: "Zone/Agility",      s1: "Mobility",      s2: "Pass Protection",s3: "Hand Technique" },
+            { name: "Marcus Dean",    pos: "IOL",  rd: 2, rank: 53, height: "6-4", weight: 318, role: "Power Run Game",    s1: "Run Blocking",  s2: "Anchor",        s3: "Hand Technique" },
+            { name: "Trevor Hill",    pos: "IOL",  rd: 2, rank: 66, height: "6-3", weight: 312, role: "Balanced",           s1: "Pass Protection",s2: "Run Blocking", s3: "Athleticism" },
+            // QB
+            { name: "Jake Simmons",   pos: "QB",   rd: 2, rank: 34, height: "6-3", weight: 224, role: "Balanced",           s1: "Decision Making",s2: "Accuracy",     s3: "Pocket Presence" },
+            { name: "Alex Torres",    pos: "QB",   rd: 2, rank: 48, height: "6-4", weight: 230, role: "Pocket Passer",     s1: "Accuracy",      s2: "Arm Talent",    s3: "Pocket Presence" },
+            { name: "Ryan Cash",      pos: "QB",   rd: 2, rank: 60, height: "6-2", weight: 215, role: "Dual-Threat",       s1: "Mobility",      s2: "Decision Making",s3: "Arm Talent" },
+
+            // ── ROUND 3 ──────────────────────────────────────────────────────
+            // EDGE
+            { name: "Jason Park",     pos: "EDGE", rd: 3, rank: 78, height: "6-3", weight: 250, role: "Speed Rusher",       s1: "Get Off",       s2: "Athleticism",   s3: "Bend" },
+            { name: "Tyler Dunn",     pos: "EDGE", rd: 3, rank: 92, height: "6-4", weight: 260, role: "Balanced",           s1: "Pass Rush Skill",s2: "Run Defense",  s3: "Athleticism" },
+            // DT
+            { name: "Marcus Reed",    pos: "DT",   rd: 3, rank: 80, height: "6-3", weight: 312, role: "Run Stuffer",        s1: "Run Stuffing",  s2: "Anchor",        s3: "Frame" },
+            { name: "Kyle Gray",      pos: "DT",   rd: 3, rank: 94, height: "6-2", weight: 298, role: "Balanced",           s1: "Leverage",      s2: "Athleticism",   s3: "Pass Rush" },
+            // LB
+            { name: "Devon Cole",     pos: "LB",   rd: 3, rank: 82, height: "6-2", weight: 238, role: "Power/Tackling",    s1: "Tackling",      s2: "Run Defense",   s3: "Blitzing" },
+            { name: "Chris Marsh",    pos: "LB",   rd: 3, rank: 96, height: "6-1", weight: 228, role: "Range/Coverage",    s1: "Coverage",      s2: "Instincts",     s3: "Athleticism" },
+            // CB
+            { name: "Caleb Kane",     pos: "CB",   rd: 3, rank: 84, height: "6-0", weight: 194, role: "Outside",           s1: "Coverage",      s2: "Athleticism",   s3: "Tackling" },
+            { name: "Blake Ross",     pos: "CB",   rd: 3, rank: 98, height: "5-11",weight: 186, role: "Balanced",           s1: "Ball Skills",   s2: "Coverage",      s3: "Fluidity" },
+            // S
+            { name: "Nate Hill",      pos: "S",    rd: 3, rank: 86, height: "6-2", weight: 214, role: "Strong Safety",     s1: "Run Defense",   s2: "Instincts",     s3: "Tackling" },
+            { name: "Ryan Cross",     pos: "S",    rd: 3, rank: 100,height: "6-0", weight: 200, role: "Free Safety",       s1: "Range",         s2: "Coverage",      s3: "Ball Skills" },
+            // RB
+            { name: "Jake Foster",    pos: "RB",   rd: 3, rank: 76, height: "5-11",weight: 208, role: "Balanced",           s1: "Vision",        s2: "Receiving",     s3: "Contact Balance" },
+            { name: "Marcus King",    pos: "RB",   rd: 3, rank: 90, height: "5-10",weight: 197, role: "Speed",             s1: "Burst",         s2: "Athleticism",   s3: "Vision" },
+            // WR
+            { name: "Caleb Pierce",   pos: "WR",   rd: 3, rank: 79, height: "6-3", weight: 216, role: "Size/Possession",   s1: "Hands",         s2: "Route Running", s3: "YAC" },
+            { name: "Devon Webb",     pos: "WR",   rd: 3, rank: 93, height: "5-10",weight: 182, role: "Speed/Quickness",   s1: "Short Area Quickness",s2: "Straight-line Speed",s3: "YAC" },
+            // TE
+            { name: "Tyler Reed",     pos: "TE",   rd: 3, rank: 81, height: "6-4", weight: 246, role: "Receiving",         s1: "Route Running", s2: "Hands",         s3: "Athleticism" },
+            { name: "Aaron Turner",   pos: "TE",   rd: 3, rank: 95, height: "6-5", weight: 254, role: "Balanced",           s1: "Blocking",      s2: "Hands",         s3: "Athleticism" },
+            // OT
+            { name: "Chris Berg",     pos: "OT",   rd: 3, rank: 83, height: "6-6", weight: 320, role: "Power",             s1: "Run Blocking",  s2: "Anchor",        s3: "Frame" },
+            { name: "Kyle Wall",      pos: "OT",   rd: 3, rank: 97, height: "6-5", weight: 308, role: "Zone/Agility",      s1: "Mobility",      s2: "Pass Protection",s3: "Hand Technique" },
+            // IOL
+            { name: "Marcus Cross",   pos: "IOL",  rd: 3, rank: 85, height: "6-3", weight: 310, role: "Balanced",           s1: "Pass Protection",s2: "Athleticism",  s3: "Run Blocking" },
+            { name: "Jake Dean",      pos: "IOL",  rd: 3, rank: 99, height: "6-4", weight: 318, role: "Power Run Game",    s1: "Run Blocking",  s2: "Hand Technique",s3: "Anchor" },
+            // QB
+            { name: "Nate Brooks",    pos: "QB",   rd: 3, rank: 77, height: "6-3", weight: 220, role: "Pocket Passer",     s1: "Accuracy",      s2: "Pocket Presence",s3: "Decision Making" },
+            { name: "Devon Cole",     pos: "QB",   rd: 3, rank: 91, height: "6-2", weight: 214, role: "Balanced",           s1: "Decision Making",s2: "Mobility",     s3: "Accuracy" },
+
+            // ── ROUND 4 ──────────────────────────────────────────────────────
+            // EDGE
+            { name: "Tyler Mills",    pos: "EDGE", rd: 4, rank: 112,height: "6-3", weight: 248, role: "Balanced",           s1: "Athleticism",   s2: "Pass Rush Skill",s3: "Run Defense" },
+            { name: "Devon Knox",     pos: "EDGE", rd: 4, rank: 128,height: "6-5", weight: 268, role: "Power Rusher",       s1: "Frame",         s2: "Run Defense",   s3: "Pass Rush Skill" },
+            // DT
+            { name: "Marcus Ross",    pos: "DT",   rd: 4, rank: 114,height: "6-2", weight: 300, role: "Run Stuffer",        s1: "Run Stuffing",  s2: "Leverage",      s3: "Anchor" },
+            { name: "Kyle Banks",     pos: "DT",   rd: 4, rank: 130,height: "6-3", weight: 294, role: "Balanced",           s1: "Athleticism",   s2: "Hand Strength", s3: "Leverage" },
+            // LB
+            { name: "Ryan Hunt",      pos: "LB",   rd: 4, rank: 116,height: "6-1", weight: 230, role: "Balanced",           s1: "Instincts",     s2: "Athleticism",   s3: "Coverage" },
+            { name: "Caleb Miles",    pos: "LB",   rd: 4, rank: 132,height: "6-2", weight: 236, role: "Power/Tackling",    s1: "Tackling",      s2: "Run Defense",   s3: "Blitzing" },
+            // CB
+            { name: "Blake Nash",     pos: "CB",   rd: 4, rank: 118,height: "5-10",weight: 180, role: "Nickel/Slot",       s1: "Fluidity",      s2: "Coverage",      s3: "Ball Skills" },
+            { name: "Jordan Vance",   pos: "CB",   rd: 4, rank: 134,height: "6-0", weight: 192, role: "Balanced",           s1: "Athleticism",   s2: "Coverage",      s3: "Tackling" },
+            // S
+            { name: "Devon Moore",    pos: "S",    rd: 4, rank: 120,height: "6-1", weight: 204, role: "Balanced",           s1: "Coverage",      s2: "Instincts",     s3: "Athleticism" },
+            { name: "Chris Evans",    pos: "S",    rd: 4, rank: 136,height: "6-2", weight: 214, role: "Strong Safety",     s1: "Run Defense",   s2: "Tackling",      s3: "Instincts" },
+            // RB
+            { name: "Nate Hall",      pos: "RB",   rd: 4, rank: 111,height: "5-10",weight: 212, role: "Power",             s1: "Contact Balance",s2: "Vision",       s3: "Pass Protection" },
+            { name: "Jake York",      pos: "RB",   rd: 4, rank: 127,height: "5-9", weight: 194, role: "Speed",             s1: "Burst",         s2: "Athleticism",   s3: "Vision" },
+            // WR
+            { name: "Tyler Brown",    pos: "WR",   rd: 4, rank: 113,height: "6-1", weight: 200, role: "Balanced",           s1: "Route Running", s2: "Hands",         s3: "YAC" },
+            { name: "Marcus Fox",     pos: "WR",   rd: 4, rank: 129,height: "6-3", weight: 212, role: "Size/Possession",   s1: "Hands",         s2: "Route Running", s3: "Athleticism" },
+            // TE
+            { name: "Devon Mason",    pos: "TE",   rd: 4, rank: 115,height: "6-5", weight: 258, role: "Blocking",          s1: "Blocking",      s2: "Athleticism",   s3: "Hand Technique" },
+            { name: "Kyle Logan",     pos: "TE",   rd: 4, rank: 131,height: "6-4", weight: 248, role: "Balanced",           s1: "Hands",         s2: "Athleticism",   s3: "Route Running" },
+            // OT
+            { name: "Caleb Adams",    pos: "OT",   rd: 4, rank: 117,height: "6-5", weight: 308, role: "Zone/Agility",      s1: "Mobility",      s2: "Pass Protection",s3: "Hand Technique" },
+            { name: "Aaron Quinn",    pos: "OT",   rd: 4, rank: 133,height: "6-6", weight: 322, role: "Power",             s1: "Run Blocking",  s2: "Anchor",        s3: "Frame" },
+            // IOL
+            { name: "Chris Lee",      pos: "IOL",  rd: 4, rank: 119,height: "6-3", weight: 306, role: "Balanced",           s1: "Pass Protection",s2: "Run Blocking", s3: "Athleticism" },
+            { name: "Tyler Dean",     pos: "IOL",  rd: 4, rank: 135,height: "6-4", weight: 314, role: "Power Run Game",    s1: "Run Blocking",  s2: "Anchor",        s3: "Hand Technique" },
+            // QB
+            { name: "Jake Simmons",   pos: "QB",   rd: 4, rank: 110,height: "6-3", weight: 222, role: "Pocket Passer",     s1: "Accuracy",      s2: "Arm Talent",    s3: "Pocket Presence" },
+            { name: "Marcus Torres",  pos: "QB",   rd: 4, rank: 126,height: "6-2", weight: 216, role: "Balanced",           s1: "Decision Making",s2: "Mobility",     s3: "Accuracy" },
+
+            // ── ROUND 5 ──────────────────────────────────────────────────────
+            // EDGE
+            { name: "Devon Clark",    pos: "EDGE", rd: 5, rank: 142,height: "6-3", weight: 246, role: "Speed Rusher",       s1: "Get Off",       s2: "Athleticism",   s3: "Bend" },
+            { name: "Tyler Owens",    pos: "EDGE", rd: 5, rank: 158,height: "6-4", weight: 256, role: "Balanced",           s1: "Pass Rush Skill",s2: "Run Defense",  s3: "Athleticism" },
+            // DT
+            { name: "Marcus Lake",    pos: "DT",   rd: 5, rank: 144,height: "6-2", weight: 292, role: "Balanced",           s1: "Leverage",      s2: "Athleticism",   s3: "Hand Strength" },
+            { name: "Kyle West",      pos: "DT",   rd: 5, rank: 160,height: "6-3", weight: 308, role: "Run Stuffer",        s1: "Run Stuffing",  s2: "Anchor",        s3: "Frame" },
+            // LB
+            { name: "Ryan Marsh",     pos: "LB",   rd: 5, rank: 146,height: "6-0", weight: 226, role: "Range/Coverage",    s1: "Coverage",      s2: "Range",         s3: "Instincts" },
+            { name: "Caleb Park",     pos: "LB",   rd: 5, rank: 162,height: "6-1", weight: 232, role: "Balanced",           s1: "Tackling",      s2: "Instincts",     s3: "Athleticism" },
+            // CB
+            { name: "Blake Cole",     pos: "CB",   rd: 5, rank: 148,height: "5-11",weight: 184, role: "Balanced",           s1: "Coverage",      s2: "Ball Skills",   s3: "Athleticism" },
+            { name: "Jordan Shaw",    pos: "CB",   rd: 5, rank: 164,height: "6-0", weight: 192, role: "Outside",           s1: "Coverage",      s2: "Athleticism",   s3: "Tackling" },
+            // S
+            { name: "Devon Gray",     pos: "S",    rd: 5, rank: 150,height: "6-1", weight: 202, role: "Free Safety",       s1: "Range",         s2: "Coverage",      s3: "Ball Skills" },
+            { name: "Chris Cross",    pos: "S",    rd: 5, rank: 166,height: "6-2", weight: 208, role: "Balanced",           s1: "Instincts",     s2: "Athleticism",   s3: "Coverage" },
+            // RB
+            { name: "Nate Moore",     pos: "RB",   rd: 5, rank: 141,height: "5-9", weight: 193, role: "Speed",             s1: "Burst",         s2: "Athleticism",   s3: "Vision" },
+            { name: "Jake Hall",      pos: "RB",   rd: 5, rank: 157,height: "5-11",weight: 206, role: "Balanced",           s1: "Vision",        s2: "Receiving",     s3: "Contact Balance" },
+            // WR
+            { name: "Tyler Thomas",   pos: "WR",   rd: 5, rank: 143,height: "5-10",weight: 178, role: "Speed/Quickness",   s1: "Straight-line Speed",s2: "YAC",      s3: "Short Area Quickness" },
+            { name: "Marcus Brown",   pos: "WR",   rd: 5, rank: 159,height: "6-1", weight: 196, role: "Balanced",           s1: "Route Running", s2: "Hands",         s3: "YAC" },
+            // TE
+            { name: "Devon Wright",   pos: "TE",   rd: 5, rank: 145,height: "6-4", weight: 244, role: "Balanced",           s1: "Athleticism",   s2: "Hands",         s3: "Blocking" },
+            { name: "Kyle Mason",     pos: "TE",   rd: 5, rank: 161,height: "6-3", weight: 240, role: "Receiving",         s1: "Route Running", s2: "YAC",           s3: "Hands" },
+            // OT
+            { name: "Caleb Stone",    pos: "OT",   rd: 5, rank: 147,height: "6-6", weight: 318, role: "Power",             s1: "Run Blocking",  s2: "Anchor",        s3: "Frame" },
+            { name: "Aaron Berg",     pos: "OT",   rd: 5, rank: 163,height: "6-5", weight: 308, role: "Balanced",           s1: "Pass Protection",s2: "Run Blocking", s3: "Hand Technique" },
+            // IOL
+            { name: "Chris Quinn",    pos: "IOL",  rd: 5, rank: 149,height: "6-3", weight: 304, role: "Balanced",           s1: "Pass Protection",s2: "Run Blocking", s3: "Athleticism" },
+            { name: "Tyler Hill",     pos: "IOL",  rd: 5, rank: 165,height: "6-4", weight: 310, role: "Zone/Agility",      s1: "Mobility",      s2: "Pass Protection",s3: "Hand Technique" },
+            // QB
+            { name: "Jake Cash",      pos: "QB",   rd: 5, rank: 140,height: "6-2", weight: 212, role: "Pocket Passer",     s1: "Accuracy",      s2: "Decision Making",s3: "Arm Talent" },
+            { name: "Marcus Brooks",  pos: "QB",   rd: 5, rank: 156,height: "6-3", weight: 220, role: "Balanced",           s1: "Decision Making",s2: "Accuracy",     s3: "Pocket Presence" },
+
+            // ── ROUND 6 ──────────────────────────────────────────────────────
+            { name: "Devon Ford",     pos: "EDGE", rd: 6, rank: 177,height: "6-3", weight: 244, role: "Balanced",           s1: "Athleticism",   s2: "Run Defense",   s3: "Pass Rush Skill" },
+            { name: "Marcus Banks",   pos: "DT",   rd: 6, rank: 178,height: "6-3", weight: 306, role: "Run Stuffer",        s1: "Run Stuffing",  s2: "Anchor",        s3: "Frame" },
+            { name: "Kyle Hart",      pos: "LB",   rd: 6, rank: 179,height: "6-1", weight: 228, role: "Balanced",           s1: "Instincts",     s2: "Tackling",      s3: "Athleticism" },
+            { name: "Tyler Stone",    pos: "CB",   rd: 6, rank: 180,height: "6-0", weight: 190, role: "Outside",           s1: "Coverage",      s2: "Athleticism",   s3: "Tackling" },
+            { name: "Caleb Nash",     pos: "S",    rd: 6, rank: 181,height: "6-1", weight: 202, role: "Balanced",           s1: "Instincts",     s2: "Coverage",      s3: "Athleticism" },
+            { name: "Jake King",      pos: "RB",   rd: 6, rank: 182,height: "5-10",weight: 196, role: "Speed",             s1: "Burst",         s2: "Vision",        s3: "Athleticism" },
+            { name: "Devon Fox",      pos: "WR",   rd: 6, rank: 183,height: "5-10",weight: 180, role: "Speed/Quickness",   s1: "Straight-line Speed",s2: "Short Area Quickness",s3: "YAC" },
+            { name: "Marcus Reed",    pos: "TE",   rd: 6, rank: 184,height: "6-4", weight: 248, role: "Balanced",           s1: "Athleticism",   s2: "Hands",         s3: "Blocking" },
+            { name: "Chris Turner",   pos: "OT",   rd: 6, rank: 185,height: "6-5", weight: 312, role: "Zone/Agility",      s1: "Mobility",      s2: "Pass Protection",s3: "Hand Technique" },
+            { name: "Tyler Cross",    pos: "IOL",  rd: 6, rank: 186,height: "6-3", weight: 308, role: "Balanced",           s1: "Pass Protection",s2: "Run Blocking", s3: "Athleticism" },
+            { name: "Nate Cole",      pos: "QB",   rd: 6, rank: 187,height: "6-3", weight: 218, role: "Pocket Passer",     s1: "Accuracy",      s2: "Decision Making",s3: "Pocket Presence" }
+        ];
+
+        // ── Config ──────────────────────────────────────────────────────────
+        const POSITIONS = {
+            defense: ['EDGE', 'DT', 'LB', 'CB', 'S'],
+            offense: ['RB', 'WR', 'TE', 'OT', 'IOL', 'QB']
+        };
+        const POSITION_ORDER = ['EDGE', 'DT', 'LB', 'CB', 'S', 'RB', 'WR', 'TE', 'OT', 'IOL', 'QB'];
+
+        const BAND_ASSIGNMENTS = {
+            'QB':   { top: 'Dual-Threat',       mid: 'Balanced', bot: 'Pocket Passer' },
+            'RB':   { top: 'Power',              mid: 'Balanced', bot: 'Speed' },
+            'WR':   { top: 'Size/Possession',    mid: 'Balanced', bot: 'Speed/Quickness' },
+            'TE':   { top: 'Blocking',           mid: 'Balanced', bot: 'Receiving' },
+            'OT':   { top: 'Power',              mid: 'Balanced', bot: 'Zone/Agility' },
+            'IOL':  { top: 'Power Run Game',     mid: 'Balanced', bot: 'Zone/Agility' },
+            'EDGE': { top: 'Power Rusher',       mid: 'Balanced', bot: 'Speed Rusher' },
+            'DT':   { top: 'Inside Pass Rusher', mid: 'Balanced', bot: 'Run Stuffer' },
+            'LB':   { top: 'Power/Tackling',     mid: 'Balanced', bot: 'Range/Coverage' },
+            'CB':   { top: 'Nickel/Slot',        mid: 'Balanced', bot: 'Outside' },
+            'S':    { top: 'Free Safety',        mid: 'Balanced', bot: 'Strong Safety' }
+        };
+
+        const ROUND_COLORS = {
+            1: '#34d399', 2: '#a3e635', 3: '#facc15',
+            4: '#fb923c', 5: '#f87171', 6: '#c084fc'
+        };
+
+        const TIER_DEFS = [
+            { name: 'Great',                 color: '#d97706', bg: 'rgba(217,119,6,0.07)' },
+            { name: 'Good',                  color: '#059669', bg: 'rgba(5,150,105,0.06)' },
+            { name: 'Solid',                 color: '#2563eb', bg: 'rgba(37,99,235,0.05)' },
+            { name: 'Role Player / Project', color: '#7c3aed', bg: 'rgba(124,58,237,0.04)' }
+        ];
+
+        const R1_SPLIT = 15 / 22;
+
+        let currentView = 'all';
+        let currentZoom = 'overview';
+
+        // ── Helpers ─────────────────────────────────────────────────────────
+        function svgEl(tag, attrs, text) {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+            if (text !== undefined) el.textContent = text;
+            return el;
+        }
+
+        function fmtHeight(h) {
+            if (!h || h === 'N/A') return '';
+            return String(h).replace(/^(\d)0-/, '$1-');
+        }
+
+        function getVisiblePositions() {
+            if (currentView === 'offense') return POSITIONS.offense;
+            if (currentView === 'defense') return POSITIONS.defense;
+            return POSITION_ORDER;
+        }
+
+        function getBandForRole(role, pos) {
+            const b = BAND_ASSIGNMENTS[pos];
+            if (!b) return 'mid';
+            if (role === b.top) return 'top';
+            if (role === b.bot) return 'bot';
+            return 'mid';
+        }
+
+        function getByPosRound(pos, rd) {
+            return players.filter(p => p.pos === pos && p.rd === rd)
+                          .sort((a, b) => a.rank - b.rank);
+        }
+
+        function getInBand(pos, rd, band) {
+            return getByPosRound(pos, rd).filter(p => getBandForRole(p.role, pos) === band);
+        }
+
+        function fmtStrengths(s1, s2, s3) {
+            return [s1, s2, s3].filter(s => s && s !== 'N/A').join(' · ');
+        }
+
+        // ── Main draw ────────────────────────────────────────────────────────
+        function drawChart() {
+            const svg = document.getElementById('chart');
+            svg.innerHTML = '';
+
+            const visiblePositions = getVisiblePositions();
+            const isOverview = currentZoom === 'overview';
+            const isRoles    = currentZoom === 'roles';
+            const isPlayers  = currentZoom === 'players';
+
+            const hasD = visiblePositions.some(p => POSITIONS.defense.includes(p));
+            const hasO = visiblePositions.some(p => POSITIONS.offense.includes(p));
+
+            const colW    = isOverview ? 80 : (isPlayers ? 210 : 192);
+            const subColW = isOverview ? colW : Math.floor(colW / 3);
+            const sepW    = (hasD && hasO) ? 28 : 0;
+
+            const margin = { top: 108, right: 100, bottom: 20, left: 128 };
+
+            const rdH = {};
+            for (let rd = 1; rd <= 6; rd++) {
+                let maxCount = 0;
+                visiblePositions.forEach(pos => {
+                    if (isOverview) {
+                        maxCount = Math.max(maxCount, getByPosRound(pos, rd).length);
+                    } else {
+                        ['top', 'mid', 'bot'].forEach(band => {
+                            maxCount = Math.max(maxCount, getInBand(pos, rd, band).length);
+                        });
+                    }
+                });
+                rdH[rd] = Math.max(46, maxCount * 16 + 20);
+            }
+
+            const greatH = Math.round(rdH[1] * R1_SPLIT);
+            const goodH  = rdH[1] - greatH;
+
+            const totalRdH = Object.values(rdH).reduce((a,b) => a+b, 0);
+            const chartW   = visiblePositions.length * colW + sepW;
+            const svgW     = margin.left + chartW + margin.right;
+            const svgH     = margin.top + totalRdH + margin.bottom;
+
+            const finalSvgW = Math.max(svgW, 600);
+            svg.setAttribute('width',  finalSvgW);
+            svg.setAttribute('height', svgH);
+
+            const wrapper = document.querySelector('.chart-wrapper');
+            wrapper.style.width    = (finalSvgW + 48) + 'px';
+            wrapper.style.maxWidth = '100%';
+
+            const colXMap = {};
+            let curX = margin.left;
+            let sepInserted = false;
+            visiblePositions.forEach(pos => {
+                if (POSITIONS.offense.includes(pos) && !sepInserted && hasD && hasO) {
+                    curX += sepW;
+                    sepInserted = true;
+                }
+                colXMap[pos] = curX;
+                curX += colW;
+            });
+
+            const rdY = {};
+            let curY = margin.top;
+            for (let rd = 1; rd <= 6; rd++) {
+                rdY[rd] = curY;
+                curY += rdH[rd];
+            }
+            const totalChartH = curY - margin.top;
+
+            // ── 1. Tier background fills + pill labels ───────────────────────
+            const tierBands = [
+                { y1: rdY[1],           y2: rdY[1] + greatH,       ...TIER_DEFS[0] },
+                { y1: rdY[1] + greatH,  y2: rdY[2] + rdH[2],       ...TIER_DEFS[1] },
+                { y1: rdY[3],           y2: rdY[3] + rdH[3],        ...TIER_DEFS[2] },
+                { y1: rdY[4],           y2: rdY[6] + rdH[6],        ...TIER_DEFS[3] },
+            ];
+
+            tierBands.forEach(t => {
+                svg.appendChild(svgEl('rect', {
+                    x: margin.left, y: t.y1,
+                    width: chartW, height: t.y2 - t.y1,
+                    fill: t.bg
+                }));
+
+                const pillW = 76;
+                const px = margin.left + chartW + 12;
+                const py = t.y1 + 4;
+                const pH = Math.max(28, (t.y2 - t.y1) - 8);
+                svg.appendChild(svgEl('rect', {
+                    x: px, y: py,
+                    width: pillW, height: pH,
+                    rx: '8', fill: 'none',
+                    stroke: t.color, 'stroke-width': '1.2', opacity: '0.9'
+                }));
+
+                const rawLabel = t.name === 'Role Player / Project' ? 'Role Player / Project' : t.name;
+                const labelLines = rawLabel.split('/').map(s => s.trim());
+                const lineH = 12;
+                const totalH = labelLines.length * lineH;
+                const startY = py + (pH - totalH) / 2 + lineH - 2;
+                const cx = px + pillW / 2;
+                labelLines.forEach((line, i) => {
+                    svg.appendChild(svgEl('text', {
+                        x: cx, y: startY + i * lineH,
+                        'text-anchor': 'middle', 'font-size': '10', 'font-weight': '700',
+                        fill: t.color
+                    }, line));
+                });
+            });
+
+            // ── 2. Column backgrounds + headers ─────────────────────────────
+            visiblePositions.forEach((pos, posIdx) => {
+                const isOff     = POSITIONS.offense.includes(pos);
+                const colX      = colXMap[pos];
+                const colBg     = posIdx % 2 === 0 ? '#F8F3EA' : '#EFE9DE';
+                const accentClr = isOff ? '#a3e635' : '#34d399';
+
+                svg.appendChild(svgEl('rect', {
+                    x: colX, y: margin.top,
+                    width: colW, height: totalChartH,
+                    fill: colBg, opacity: '0.55'
+                }));
+                svg.appendChild(svgEl('rect', {
+                    x: colX, y: 0,
+                    width: colW, height: margin.top,
+                    fill: colBg
+                }));
+                svg.appendChild(svgEl('rect', {
+                    x: colX, y: 4,
+                    width: colW, height: 5,
+                    fill: accentClr, opacity: '0.55'
+                }));
+                svg.appendChild(svgEl('text', {
+                    x: colX + colW / 2,
+                    y: isOverview ? 44 : 34,
+                    'text-anchor': 'middle',
+                    'font-size': '15', 'font-weight': '700',
+                    fill: '#1A2720'
+                }, pos));
+
+                if (!isOverview) {
+                    const bands = BAND_ASSIGNMENTS[pos];
+                    const subLabels = [bands.top, bands.mid, bands.bot];
+                    subLabels.forEach((name, bi) => {
+                        const scX   = colX + bi * subColW + subColW / 2;
+                        const isMid = bi === 1;
+
+                        if (bi > 0) {
+                            svg.appendChild(svgEl('line', {
+                                x1: colX + bi * subColW, y1: 44,
+                                x2: colX + bi * subColW, y2: margin.top + totalChartH,
+                                stroke: '#D8D3CA', 'stroke-width': '0.7'
+                            }));
+                        }
+
+                        const words = name.split('/');
+                        if (words.length > 1) {
+                            svg.appendChild(svgEl('text', {
+                                x: scX, y: 56, 'text-anchor': 'middle',
+                                'font-size': '7', 'font-style': isMid ? 'italic' : 'normal',
+                                fill: isMid ? 'rgba(52,211,153,0.9)' : '#8AAA98'
+                            }, words[0].trim() + '/'));
+                            svg.appendChild(svgEl('text', {
+                                x: scX, y: 65, 'text-anchor': 'middle',
+                                'font-size': '7', 'font-style': isMid ? 'italic' : 'normal',
+                                fill: isMid ? 'rgba(52,211,153,0.9)' : '#8AAA98'
+                            }, words[1].trim()));
+                        } else {
+                            svg.appendChild(svgEl('text', {
+                                x: scX, y: 62, 'text-anchor': 'middle',
+                                'font-size': '7.5', 'font-style': isMid ? 'italic' : 'normal',
+                                fill: isMid ? 'rgba(52,211,153,0.9)' : '#8AAA98'
+                            }, name));
+                        }
+                    });
+                }
+
+                svg.appendChild(svgEl('line', {
+                    x1: colX + colW, y1: 0,
+                    x2: colX + colW, y2: margin.top + totalChartH,
+                    stroke: '#C4C0B8', 'stroke-width': '1'
+                }));
+            });
+
+            // ── 3. Section labels (DEFENSE / OFFENSE) ────────────────────────
+            if (hasD) {
+                const firstDefX = colXMap[visiblePositions.find(p => POSITIONS.defense.includes(p))];
+                svg.appendChild(svgEl('text', {
+                    x: firstDefX + 4, y: margin.top - 10,
+                    'font-size': '8', 'font-weight': '700',
+                    fill: '#34d399', opacity: '0.6', 'letter-spacing': '2'
+                }, 'DEFENSE'));
+            }
+            if (hasO) {
+                const firstOffPos = visiblePositions.find(p => POSITIONS.offense.includes(p));
+                if (firstOffPos) {
+                    svg.appendChild(svgEl('text', {
+                        x: colXMap[firstOffPos] + 4, y: margin.top - 10,
+                        'font-size': '8', 'font-weight': '700',
+                        fill: '#a3e635', opacity: '0.6', 'letter-spacing': '2'
+                    }, 'OFFENSE'));
+                }
+            }
+
+            if (hasD && hasO) {
+                const firstOffPos = visiblePositions.find(p => POSITIONS.offense.includes(p));
+                const sepX = colXMap[firstOffPos] - sepW / 2;
+                svg.appendChild(svgEl('line', {
+                    x1: sepX, y1: 18,
+                    x2: sepX, y2: margin.top + totalChartH,
+                    stroke: '#C4D0CC', 'stroke-width': '1.5',
+                    'stroke-dasharray': '6,4'
+                }));
+            }
+
+            // ── 4. Round rows ────────────────────────────────────────────────
+            for (let rd = 1; rd <= 6; rd++) {
+                const ry  = rdY[rd];
+                const rh  = rdH[rd];
+                const clr = ROUND_COLORS[rd];
+
+                svg.appendChild(svgEl('rect', {
+                    x: margin.left - 5, y: ry,
+                    width: 4, height: rh,
+                    fill: clr, opacity: '0.45'
+                }));
+                svg.appendChild(svgEl('text', {
+                    x: margin.left - 12, y: ry + rh / 2 + 5,
+                    'text-anchor': 'end',
+                    'font-size': '14', 'font-weight': '700',
+                    fill: clr
+                }, `R${rd}`));
+
+                if (rd < 6) {
+                    svg.appendChild(svgEl('line', {
+                        x1: margin.left - 8,   y1: ry + rh,
+                        x2: margin.left + chartW, y2: ry + rh,
+                        stroke: '#C4C0B8', 'stroke-width': '1'
+                    }));
+                }
+            }
+
+            // ── 5. Dots ───────────────────────────────────────────────────────
+            visiblePositions.forEach(pos => {
+                const colX = colXMap[pos];
+
+                for (let rd = 1; rd <= 6; rd++) {
+                    const ry = rdY[rd];
+                    const rh = rdH[rd];
+                    const allRd = getByPosRound(pos, rd);
+
+                    if (isOverview) {
+                        allRd.forEach((player, idx) => {
+                            const x = colX + colW / 2;
+                            const y = ry + rh / (allRd.length + 1) * (idx + 1);
+                            drawDot(svg, x, y, player, false, 0);
+                        });
+                    } else {
+                        ['top', 'mid', 'bot'].forEach((key, bi) => {
+                            const bp  = getInBand(pos, rd, key);
+                            const scX = colX + bi * subColW + subColW / 2;
+                            bp.forEach((player, idx) => {
+                                const y = ry + rh / (bp.length + 1) * (idx + 1);
+                                drawDot(svg, scX, y, player, isPlayers, idx);
+                            });
+                        });
+                    }
+                }
+            });
+
+            updateLegend();
+        }
+
+        // ── Draw dot + optional label ──────────────────────────────────────
+        function drawDot(svg, x, y, player, showLabel, idx) {
+            const circle = svgEl('circle', {
+                cx: x, cy: y, r: '5',
+                fill: ROUND_COLORS[player.rd],
+                stroke: '#FFFFFF', 'stroke-width': '1.5', cursor: 'pointer'
+            });
+            circle.addEventListener('mouseenter', e => showTooltip(e, player));
+            circle.addEventListener('mouseleave', hideTooltip);
+            svg.appendChild(circle);
+
+            if (showLabel) {
+                const lineH  = 11;
+                const goRight = (idx % 2 === 0);
+                const lx      = goRight ? x + 8  : x - 8;
+                const anchor  = goRight ? 'start' : 'end';
+                const baseY   = y - lineH;
+
+                svg.appendChild(svgEl('text', {
+                    x: lx, y: baseY, 'text-anchor': anchor,
+                    'font-size': '9', 'font-weight': '600',
+                    fill: '#1A2720', 'pointer-events': 'none'
+                }, player.name));
+
+                svg.appendChild(svgEl('text', {
+                    x: lx, y: baseY + lineH, 'text-anchor': anchor,
+                    'font-size': '8', fill: '#5A7868', 'pointer-events': 'none'
+                }, `R${player.rd}·#${player.rank}·${fmtHeight(player.height)}·${player.weight}lbs`));
+
+                const str = fmtStrengths(player.s1, player.s2, player.s3);
+                if (str) {
+                    svg.appendChild(svgEl('text', {
+                        x: lx, y: baseY + lineH * 2, 'text-anchor': anchor,
+                        'font-size': '7.5', fill: '#8AAA98', 'pointer-events': 'none'
+                    }, str));
+                }
+            }
+        }
+
+        // ── Tooltip ───────────────────────────────────────────────────────────
+        function showTooltip(event, player) {
+            const tt  = document.getElementById('tooltip');
+            const str = fmtStrengths(player.s1, player.s2, player.s3);
+            tt.innerHTML = `
+                <div class="tooltip-line"><strong>${player.name}</strong> &mdash; ${player.pos}</div>
+                <div class="tooltip-line"><span class="tooltip-label">Role:</span> ${player.role}</div>
+                <div class="tooltip-line"><span class="tooltip-label">R${player.rd}, Pick #${player.rank}</span></div>
+                <div class="tooltip-line">${fmtHeight(player.height)} &nbsp;·&nbsp; ${player.weight} lbs</div>
+                ${str ? `<div class="tooltip-line" style="margin-top:5px;color:#5A7868;font-size:11px">${str}</div>` : ''}
+            `;
+            tt.style.display = 'block';
+            tt.style.left    = (event.pageX + 14) + 'px';
+            tt.style.top     = (event.pageY + 12) + 'px';
+        }
+
+        function hideTooltip() {
+            document.getElementById('tooltip').style.display = 'none';
+        }
+
+        function updateLegend() {
+            const legend = document.getElementById('players-legend');
+            if (legend) legend.style.display = currentZoom === 'players' ? 'flex' : 'none';
+        }
+
+        // ── Controls ──────────────────────────────────────────────────────────
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentView = e.target.dataset.view;
+                drawChart();
+            });
+        });
+
+        document.querySelectorAll('[data-zoom]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                document.querySelectorAll('[data-zoom]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentZoom = e.target.dataset.zoom;
+                drawChart();
+            });
+        });
+
+        window.addEventListener('resize', drawChart);
+        drawChart();
+    </script>
+</body>
+</html>

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DraftMap — Design Sandbox</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* ─── SANDBOX BANNER ──────────────────────────────────────────────── */
+        .sandbox-banner {
+            background: #d97706;
+            color: #fff;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px;
+            letter-spacing: 1px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* ─── BASE ────────────────────────────────────────────────────────── */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #F5EFE4;
+            color: #1A2720;
+            padding: 24px;
+        }
+
+        .container { max-width: 1600px; margin: 0 auto; }
+
+        header { margin-bottom: 32px; }
+
+        .app-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1A2720;
+            margin-bottom: 4px;
+        }
+
+        .app-tagline {
+            font-size: 14px;
+            color: #5A7868;
+        }
+
+        /* ─── CONTROLS ────────────────────────────────────────────────────── */
+        .controls {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+        }
+
+        .control-group { display: flex; gap: 8px; align-items: center; }
+
+        .button-group {
+            display: flex;
+            gap: 8px;
+            background: #E3DDD4;
+            padding: 4px;
+            border-radius: 20px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #E3DDD4;
+            color: #5A7868;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .btn.active { background: #3B7A5C; color: #FFFFFF; }
+        .btn:hover { color: #3B7A5C; }
+
+        .year-label {
+            font-size: 14px;
+            color: #5A7868;
+            font-weight: 500;
+        }
+
+        /* ─── CHART WRAPPER ───────────────────────────────────────────────── */
+        .chart-wrapper {
+            background: #FFFFFF;
+            border-radius: 12px;
+            padding: 24px;
+            overflow-x: auto;
+            position: relative;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        svg { display: block; margin: 0 auto; }
+
+        /* ─── TOOLTIP ─────────────────────────────────────────────────────── */
+        .tooltip {
+            position: absolute;
+            background: #FFFFFF;
+            border: 1px solid #3B7A5C;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 12px;
+            z-index: 1000;
+            pointer-events: none;
+            max-width: 200px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        }
+
+        .tooltip-line { margin: 4px 0; color: #1A2720; }
+        .tooltip-label { color: #5A7868; font-size: 11px; }
+
+        /* ─── PLAYER LEGEND ───────────────────────────────────────────────── */
+        .players-legend {
+            display: none;
+            position: absolute;
+            top: 14px;
+            right: 14px;
+            flex-direction: column;
+            gap: 4px;
+            padding: 10px 14px;
+            background: rgba(255,255,255,0.97);
+            border: 1px solid #D4A017;
+            border-radius: 8px;
+            font-size: 11px;
+            z-index: 10;
+            min-width: 180px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        }
+
+        .players-legend-title {
+            color: #D4A017;
+            font-weight: 700;
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(212,160,23,0.3);
+            padding-bottom: 4px;
+        }
+
+        .players-legend-row { display: flex; align-items: flex-start; gap: 8px; }
+
+        .legend-dot {
+            width: 10px; height: 10px;
+            border-radius: 50%;
+            background: #5A7868;
+            border: 1.5px solid #DDD8D0;
+            flex-shrink: 0;
+        }
+
+        .legend-lines { display: flex; flex-direction: column; gap: 2px; }
+        .legend-line-1 { color: #1A2720; font-weight: 600; font-size: 10px; }
+        .legend-line-2 { color: #5A7868; font-size: 9px; }
+        .legend-line-3 { color: #8AAA98; font-size: 8.5px; }
+    </style>
+</head>
+<body>
+    <div class="sandbox-banner">⚠ DESIGN SANDBOX — Fake data only. Do not ship this file.</div>
+
+    <div class="container">
+        <header>
+            <div class="app-title">DraftMap</div>
+            <div class="app-tagline">NFL Draft at a glance. Find your sleeper.</div>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <div class="button-group">
+                    <button class="btn active" data-view="all">All Positions</button>
+                    <button class="btn" data-view="offense">Offense</button>
+                    <button class="btn" data-view="defense">Defense</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="button-group">
+                    <button class="btn active" data-zoom="overview">Overview</button>
+                    <button class="btn" data-zoom="roles">Roles</button>
+                    <button class="btn" data-zoom="players">Players</button>
+                </div>
+            </div>
+            <div class="year-label">2026 Draft Class</div>
+        </div>
+
+        <div id="players-legend" class="players-legend">
+            <div class="players-legend-title">Player Legend</div>
+            <div class="players-legend-row">
+                <div class="legend-dot"></div>
+                <div class="legend-lines">
+                    <div class="legend-line-1">Player Name</div>
+                    <div class="legend-line-2">Round &nbsp;·&nbsp; Pick &nbsp;·&nbsp; Height &nbsp;·&nbsp; Weight</div>
+                    <div class="legend-line-3">Strength 1 &nbsp;·&nbsp; Strength 2 &nbsp;·&nbsp; Strength 3</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-wrapper">
+            <svg id="chart" width="1400" height="800"></svg>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip" style="display: none;"></div>
+
+    <script>
+        // ── FAKE PLAYER DATA (design sandbox only) ───────────────────────────
+        const players = [
+            // ── EDGE ──
+            { name: "Marcus Reed",    pos:"EDGE", rd:1, rank:1,   height:"6-04", weight:265, role:"Power Rusher",  s1:"Get Off",        s2:"Bend",          s3:"Pass Rush Skill" },
+            { name: "Jordan Ellis",   pos:"EDGE", rd:1, rank:8,   height:"6-03", weight:248, role:"Speed Rusher",  s1:"Get Off",        s2:"Athleticism",   s3:"Bend"            },
+            { name: "Devon Cole",     pos:"EDGE", rd:2, rank:36,  height:"6-04", weight:260, role:"Balanced",      s1:"Pass Rush Skill",s2:"Run Defense",   s3:"Athleticism"     },
+            { name: "Tyler Nash",     pos:"EDGE", rd:2, rank:44,  height:"6-05", weight:270, role:"Power Rusher",  s1:"Run Defense",    s2:"Frame",         s3:"Athleticism"     },
+            { name: "Chris Vance",    pos:"EDGE", rd:3, rank:72,  height:"6-03", weight:255, role:"Speed Rusher",  s1:"Get Off",        s2:"Bend",          s3:"Athleticism"     },
+            { name: "Devon Fringe",   pos:"EDGE", rd:4, rank:108, height:"6-03", weight:245, role:"Balanced",      s1:"Run Defense",    s2:"Athleticism",   s3:"Pass Rush Skill" },
+            { name: "Marcus Late",    pos:"EDGE", rd:5, rank:145, height:"6-04", weight:252, role:"Speed Rusher",  s1:"Get Off",        s2:"Athleticism",   s3:"Bend"            },
+            { name: "Tyler Project",  pos:"EDGE", rd:6, rank:188, height:"6-04", weight:240, role:"Power Rusher",  s1:"Frame",          s2:"Run Defense",   s3:"Athleticism"     },
+
+            // ── DT ──
+            { name: "Isaiah Banks",   pos:"DT", rd:1, rank:3,   height:"6-02", weight:305, role:"Inside Pass Rusher", s1:"Pass Rush",    s2:"Hand Strength", s3:"Leverage"    },
+            { name: "Marcus Hill",    pos:"DT", rd:2, rank:40,  height:"6-03", weight:315, role:"Run Stuffer",        s1:"Run Stuffing", s2:"Frame",         s3:"Leverage"    },
+            { name: "Chris Wade",     pos:"DT", rd:3, rank:78,  height:"6-02", weight:298, role:"Balanced",           s1:"Hand Strength",s2:"Athleticism",   s3:"Pass Rush"   },
+            { name: "Tyler Plug",     pos:"DT", rd:4, rank:114, height:"6-01", weight:310, role:"Run Stuffer",        s1:"Run Stuffing", s2:"Leverage",      s3:"Frame"       },
+            { name: "Jordan Deep",    pos:"DT", rd:5, rank:152, height:"6-02", weight:300, role:"Inside Pass Rusher", s1:"Pass Rush",    s2:"Hand Strength", s3:"Leverage"    },
+            { name: "Devon Project",  pos:"DT", rd:6, rank:194, height:"6-03", weight:295, role:"Balanced",           s1:"Leverage",     s2:"Frame",         s3:"Run Stuffing" },
+
+            // ── LB ──
+            { name: "Marcus King",    pos:"LB", rd:2, rank:38,  height:"6-02", weight:240, role:"Power/Tackling",  s1:"Tackling",    s2:"Run Defense",  s3:"Instincts"   },
+            { name: "Devon Pierce",   pos:"LB", rd:2, rank:50,  height:"6-01", weight:230, role:"Range/Coverage",  s1:"Coverage",    s2:"Athleticism",  s3:"Instincts"   },
+            { name: "Tyler Stone",    pos:"LB", rd:3, rank:80,  height:"6-02", weight:238, role:"Balanced",        s1:"Run Defense", s2:"Tackling",     s3:"Blitzing"    },
+            { name: "Jordan Blitz",   pos:"LB", rd:4, rank:118, height:"6-03", weight:245, role:"Power/Tackling",  s1:"Tackling",    s2:"Blitzing",     s3:"Run Defense" },
+            { name: "Devon Range",    pos:"LB", rd:5, rank:158, height:"6-00", weight:228, role:"Range/Coverage",  s1:"Coverage",    s2:"Athleticism",  s3:"Instincts"   },
+            { name: "Tyler Depth",    pos:"LB", rd:6, rank:198, height:"6-01", weight:232, role:"Balanced",        s1:"Run Defense", s2:"Instincts",    s3:"Tackling"    },
+
+            // ── CB ──
+            { name: "Antonio James",  pos:"CB", rd:1, rank:4,   height:"6-00", weight:195, role:"Outside",      s1:"Coverage",    s2:"Ball Skills",  s3:"Athleticism" },
+            { name: "Derek Foster",   pos:"CB", rd:1, rank:12,  height:"5-10", weight:188, role:"Nickel/Slot",  s1:"Fluidity",    s2:"Coverage",     s3:"Tackling"    },
+            { name: "Marcus Brown",   pos:"CB", rd:2, rank:42,  height:"6-01", weight:200, role:"Outside",      s1:"Coverage",    s2:"Physicality",  s3:"Ball Skills" },
+            { name: "Jordan Price",   pos:"CB", rd:3, rank:76,  height:"5-11", weight:192, role:"Balanced",     s1:"Coverage",    s2:"Athleticism",  s3:"Tackling"    },
+            { name: "Marcus Cover",   pos:"CB", rd:4, rank:120, height:"5-09", weight:182, role:"Nickel/Slot",  s1:"Fluidity",    s2:"Short Area Quickness", s3:"Coverage" },
+            { name: "Tyler Late",     pos:"CB", rd:5, rank:162, height:"5-10", weight:190, role:"Outside",      s1:"Coverage",    s2:"Ball Skills",  s3:"Tackling"    },
+            { name: "Marcus Project", pos:"CB", rd:6, rank:200, height:"5-11", weight:185, role:"Balanced",     s1:"Coverage",    s2:"Athleticism",  s3:"Fluidity"    },
+
+            // ── S ──
+            { name: "Tyler Grant",    pos:"S", rd:1, rank:17,  height:"6-01", weight:205, role:"Free Safety",   s1:"Coverage",    s2:"Range",        s3:"Ball Skills" },
+            { name: "Chris Moore",    pos:"S", rd:2, rank:46,  height:"6-02", weight:218, role:"Strong Safety", s1:"Run Defense", s2:"Instincts",    s3:"Tackling"    },
+            { name: "Jordan Lewis",   pos:"S", rd:3, rank:84,  height:"6-00", weight:210, role:"Balanced",      s1:"Coverage",    s2:"Instincts",    s3:"Athleticism" },
+            { name: "Devon Deep",     pos:"S", rd:4, rank:122, height:"6-00", weight:198, role:"Free Safety",   s1:"Range",       s2:"Coverage",     s3:"Ball Skills" },
+            { name: "Marcus Depth",   pos:"S", rd:5, rank:165, height:"6-01", weight:215, role:"Strong Safety", s1:"Run Defense", s2:"Tackling",     s3:"Instincts"   },
+            { name: "Jordan Project", pos:"S", rd:6, rank:202, height:"6-00", weight:205, role:"Balanced",      s1:"Coverage",    s2:"Instincts",    s3:"Range"       },
+
+            // ── RB ──
+            { name: "Jordan Miles",   pos:"RB", rd:1, rank:29,  height:"5-10", weight:198, role:"Speed",    s1:"Burst",          s2:"Athleticism",     s3:"Vision"          },
+            { name: "Marcus Clay",    pos:"RB", rd:2, rank:52,  height:"5-11", weight:218, role:"Power",    s1:"Contact Balance",s2:"Pass Protection",  s3:"Vision"          },
+            { name: "Devon Rush",     pos:"RB", rd:3, rank:86,  height:"5-11", weight:208, role:"Balanced", s1:"Vision",         s2:"Receiving",        s3:"Burst"           },
+            { name: "Marcus Pound",   pos:"RB", rd:4, rank:124, height:"6-00", weight:225, role:"Power",    s1:"Contact Balance",s2:"Pass Protection",  s3:"Run Blocking"    },
+            { name: "Jordan Depth",   pos:"RB", rd:5, rank:168, height:"5-09", weight:190, role:"Speed",    s1:"Burst",          s2:"Athleticism",      s3:"Receiving"       },
+            { name: "Devon Late",     pos:"RB", rd:6, rank:204, height:"5-10", weight:200, role:"Balanced", s1:"Vision",         s2:"Contact Balance",  s3:"Pass Protection" },
+
+            // ── WR ──
+            { name: "Chris Storm",    pos:"WR", rd:1, rank:5,   height:"6-00", weight:188, role:"Speed/Quickness",  s1:"Straight-line Speed", s2:"Route Running",       s3:"YAC"                  },
+            { name: "Tyler Brooks",   pos:"WR", rd:1, rank:15,  height:"6-04", weight:218, role:"Size/Possession",  s1:"Hands",               s2:"Route Running",       s3:"YAC"                  },
+            { name: "Jordan Swift",   pos:"WR", rd:2, rank:54,  height:"6-01", weight:195, role:"Balanced",         s1:"Route Running",       s2:"Hands",               s3:"Short Area Quickness" },
+            { name: "Marcus Fleet",   pos:"WR", rd:3, rank:88,  height:"5-11", weight:180, role:"Speed/Quickness",  s1:"Straight-line Speed", s2:"YAC",                 s3:"Route Running"        },
+            { name: "Tyler Route",    pos:"WR", rd:4, rank:126, height:"6-02", weight:200, role:"Balanced",         s1:"Hands",               s2:"Route Running",       s3:"YAC"                  },
+            { name: "Marcus Sleeper", pos:"WR", rd:5, rank:170, height:"6-03", weight:210, role:"Size/Possession",  s1:"Hands",               s2:"YAC",                 s3:"Route Running"        },
+            { name: "Jordan Project", pos:"WR", rd:6, rank:206, height:"6-00", weight:185, role:"Balanced",         s1:"Route Running",       s2:"Hands",               s3:"Athleticism"          },
+
+            // ── TE ──
+            { name: "Devon Cross",    pos:"TE", rd:1, rank:26,  height:"6-05", weight:248, role:"Receiving", s1:"Route Running", s2:"Hands",       s3:"Athleticism"  },
+            { name: "Marcus Block",   pos:"TE", rd:2, rank:56,  height:"6-06", weight:262, role:"Blocking",  s1:"Blocking",      s2:"Route Running",s3:"Hands"       },
+            { name: "Jordan Star",    pos:"TE", rd:3, rank:90,  height:"6-04", weight:252, role:"Balanced",  s1:"Hands",         s2:"Athleticism",  s3:"Route Running"},
+            { name: "Jordan Gate",    pos:"TE", rd:4, rank:128, height:"6-05", weight:258, role:"Blocking",  s1:"Blocking",      s2:"Anchor",       s3:"Run Blocking" },
+            { name: "Tyler Sleeper",  pos:"TE", rd:5, rank:172, height:"6-04", weight:245, role:"Receiving", s1:"Hands",         s2:"Route Running",s3:"Athleticism"  },
+            { name: "Marcus Late",    pos:"TE", rd:6, rank:208, height:"6-04", weight:250, role:"Balanced",  s1:"Blocking",      s2:"Hands",        s3:"Route Running"},
+
+            // ── OT ──
+            { name: "Chris Wall",     pos:"OT", rd:1, rank:6,   height:"6-06", weight:318, role:"Power",        s1:"Pass Protection", s2:"Anchor",       s3:"Run Blocking"   },
+            { name: "Tyler Guard",    pos:"OT", rd:1, rank:16,  height:"6-05", weight:302, role:"Zone/Agility", s1:"Pass Protection", s2:"Mobility",     s3:"Hand Technique" },
+            { name: "Marcus Stone",   pos:"OT", rd:2, rank:58,  height:"6-05", weight:308, role:"Balanced",     s1:"Run Blocking",    s2:"Pass Protection",s3:"Hand Technique"},
+            { name: "Devon Shield",   pos:"OT", rd:3, rank:92,  height:"6-06", weight:322, role:"Power",        s1:"Anchor",          s2:"Run Blocking", s3:"Frame"          },
+            { name: "Marcus Mound",   pos:"OT", rd:4, rank:130, height:"6-04", weight:298, role:"Zone/Agility", s1:"Mobility",        s2:"Pass Protection",s3:"Hand Technique"},
+            { name: "Devon Late",     pos:"OT", rd:5, rank:174, height:"6-05", weight:310, role:"Power",        s1:"Anchor",          s2:"Run Blocking", s3:"Frame"          },
+            { name: "Tyler Depth",    pos:"OT", rd:6, rank:210, height:"6-05", weight:305, role:"Balanced",     s1:"Pass Protection", s2:"Run Blocking", s3:"Hand Technique" },
+
+            // ── IOL ──
+            { name: "Jordan Anchor",  pos:"IOL", rd:2, rank:60,  height:"6-03", weight:310, role:"Power Run Game", s1:"Run Blocking",    s2:"Anchor",       s3:"Hand Technique" },
+            { name: "Marcus Zone",    pos:"IOL", rd:2, rank:62,  height:"6-02", weight:295, role:"Zone/Agility",   s1:"Pass Protection", s2:"Mobility",     s3:"Hand Technique" },
+            { name: "Tyler Core",     pos:"IOL", rd:3, rank:94,  height:"6-03", weight:305, role:"Balanced",       s1:"Run Blocking",    s2:"Pass Protection",s3:"Anchor"       },
+            { name: "Devon Push",     pos:"IOL", rd:4, rank:132, height:"6-04", weight:315, role:"Power Run Game", s1:"Anchor",          s2:"Run Blocking", s3:"Hand Technique" },
+            { name: "Marcus Depth",   pos:"IOL", rd:5, rank:176, height:"6-02", weight:292, role:"Zone/Agility",   s1:"Pass Protection", s2:"Mobility",     s3:"Hand Technique" },
+            { name: "Jordan Center",  pos:"IOL", rd:6, rank:212, height:"6-03", weight:308, role:"Power Run Game", s1:"Anchor",          s2:"Run Blocking", s3:"Hand Technique" },
+
+            // ── QB ──
+            { name: "Alex Signal",    pos:"QB", rd:1, rank:13,  height:"6-03", weight:220, role:"Pocket Passer", s1:"Accuracy",    s2:"Pocket Presence", s3:"Decision Making" },
+            { name: "Marcus Arm",     pos:"QB", rd:2, rank:33,  height:"6-02", weight:215, role:"Dual-Threat",   s1:"Arm Talent",  s2:"Mobility",        s3:"Decision Making" },
+            { name: "Jordan Play",    pos:"QB", rd:3, rank:96,  height:"6-04", weight:230, role:"Balanced",      s1:"Accuracy",    s2:"Decision Making", s3:"Pocket Presence" },
+            { name: "Tyler Clutch",   pos:"QB", rd:4, rank:134, height:"6-01", weight:208, role:"Dual-Threat",   s1:"Mobility",    s2:"Arm Talent",      s3:"Decision Making" },
+            { name: "Jordan Late",    pos:"QB", rd:5, rank:178, height:"6-03", weight:218, role:"Pocket Passer", s1:"Accuracy",    s2:"Pocket Presence", s3:"Arm Talent"      },
+            { name: "Devon Late",     pos:"QB", rd:6, rank:214, height:"6-02", weight:215, role:"Balanced",      s1:"Accuracy",    s2:"Decision Making", s3:"Arm Talent"      }
+        ];
+
+        // ── POSITION CONFIG ───────────────────────────────────────────────────
+        const POSITIONS = {
+            defense: ['EDGE', 'DT', 'LB', 'CB', 'S'],
+            offense: ['RB', 'WR', 'TE', 'OT', 'IOL', 'QB']
+        };
+
+        const POSITION_ORDER = ['EDGE', 'DT', 'LB', 'CB', 'S', 'RB', 'WR', 'TE', 'OT', 'IOL', 'QB'];
+
+        const BAND_ASSIGNMENTS = {
+            'QB':   { top: 'Dual-Threat',       mid: 'Balanced', bot: 'Pocket Passer' },
+            'RB':   { top: 'Power',              mid: 'Balanced', bot: 'Speed' },
+            'WR':   { top: 'Size/Possession',    mid: 'Balanced', bot: 'Speed/Quickness' },
+            'TE':   { top: 'Blocking',           mid: 'Balanced', bot: 'Receiving' },
+            'OT':   { top: 'Power',              mid: 'Balanced', bot: 'Zone/Agility' },
+            'IOL':  { top: 'Power Run Game',     mid: 'Balanced', bot: 'Zone/Agility' },
+            'EDGE': { top: 'Power Rusher',       mid: 'Balanced', bot: 'Speed Rusher' },
+            'DT':   { top: 'Inside Pass Rusher', mid: 'Balanced', bot: 'Run Stuffer' },
+            'LB':   { top: 'Power/Tackling',     mid: 'Balanced', bot: 'Range/Coverage' },
+            'CB':   { top: 'Nickel/Slot',        mid: 'Balanced', bot: 'Outside' },
+            'S':    { top: 'Free Safety',        mid: 'Balanced', bot: 'Strong Safety' }
+        };
+
+        const ROUND_COLORS = {
+            1: '#34d399', 2: '#a3e635', 3: '#facc15',
+            4: '#fb923c', 5: '#f87171', 6: '#c084fc'
+        };
+
+        const R1_SPLIT = 15 / 21;
+
+        const TIER_DEFS = [
+            { name: 'Great',                 x1f: 0,        x2f: R1_SPLIT,  color: '#d97706', bg: 'rgba(217,119,6,0.06)' },
+            { name: 'Good',                  x1f: R1_SPLIT, x2f: 2/6*6,     color: '#059669', bg: 'rgba(5,150,105,0.05)' },
+            { name: 'Solid',                 x1f: 2,        x2f: 3,         color: '#2563eb', bg: 'rgba(37,99,235,0.05)' },
+            { name: 'Role Player / Project', x1f: 3,        x2f: 6,         color: '#7c3aed', bg: 'rgba(124,58,237,0.04)' }
+        ];
+
+        let currentView = 'all';
+        let currentZoom = 'overview';
+
+        // ── Helpers ───────────────────────────────────────────────────────────
+        function svgEl(tag, attrs, text) {
+            const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+            for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+            if (text !== undefined) el.textContent = text;
+            return el;
+        }
+
+        function fmtHeight(h) {
+            if (!h) return '';
+            return String(h).replace(/^(\d)0-/, '$1-');
+        }
+
+        function getVisiblePositions() {
+            if (currentView === 'offense') return POSITIONS.offense;
+            if (currentView === 'defense') return POSITIONS.defense;
+            return POSITION_ORDER;
+        }
+
+        function getBandForRole(role, position) {
+            const b = BAND_ASSIGNMENTS[position];
+            if (!b) return 'mid';
+            if (role === b.top) return 'top';
+            if (role === b.bot) return 'bot';
+            return 'mid';
+        }
+
+        function getByPosRound(pos, rd) {
+            return players.filter(p => p.pos === pos && p.rd === rd).sort((a, b) => a.rank - b.rank);
+        }
+
+        function getInBand(pos, rd, band) {
+            return getByPosRound(pos, rd).filter(p => getBandForRole(p.role, pos) === band);
+        }
+
+        function fmtStrengths(s1, s2, s3) {
+            return [s1, s2, s3].filter(s => s && s !== 'N/A').join(' · ');
+        }
+
+        // ── Draw chart ────────────────────────────────────────────────────────
+        function drawChart() {
+            const svg = document.getElementById('chart');
+            svg.innerHTML = '';
+
+            const visiblePositions = getVisiblePositions();
+            const isOverview = currentZoom === 'overview';
+
+            const hasD = visiblePositions.some(p => POSITIONS.defense.includes(p));
+            const hasO = visiblePositions.some(p => POSITIONS.offense.includes(p));
+            const sepSpace = (hasD && hasO) ? 30 : 0;
+
+            const rowH = isOverview ? 36 : 102;
+            const margin = { top: 92, right: 30, bottom: 20, left: 82 };
+            const svgW = svg.parentElement.offsetWidth || 1400;
+            svg.setAttribute('width', svgW);
+            const totalH = margin.top + visiblePositions.length * rowH + sepSpace + margin.bottom;
+            svg.setAttribute('height', totalH);
+
+            const chartW = svgW - margin.left - margin.right;
+            const rdW = chartW / 6;
+            const chartAreaH = totalH - margin.top - margin.bottom;
+
+            // Tier backgrounds + pill labels
+            TIER_DEFS.forEach(t => {
+                const x1 = margin.left + t.x1f * rdW;
+                const x2 = margin.left + t.x2f * rdW;
+                const w = x2 - x1;
+                const cx = (x1 + x2) / 2;
+
+                svg.appendChild(svgEl('rect', { x: x1, y: margin.top, width: w, height: chartAreaH, fill: t.bg }));
+
+                const pillW = Math.min(Math.max(t.name.length * 7.2, 56), w - 4);
+                const pillH = 22;
+                const pillY = margin.top - 68;
+                svg.appendChild(svgEl('rect', {
+                    x: cx - pillW / 2, y: pillY, width: pillW, height: pillH,
+                    rx: '11', fill: 'none', stroke: t.color, 'stroke-width': '1.2', opacity: '0.75'
+                }));
+                svg.appendChild(svgEl('text', {
+                    x: cx, y: pillY + 15, 'text-anchor': 'middle',
+                    'font-size': '10.5', 'font-weight': '700', fill: t.color
+                }, t.name));
+            });
+
+            // Dashed boundary lines
+            [R1_SPLIT, 2, 3].forEach(frac => {
+                const x = margin.left + frac * rdW;
+                svg.appendChild(svgEl('line', {
+                    x1: x, y1: margin.top - 48, x2: x, y2: totalH - margin.bottom,
+                    stroke: '#D8D3CA', 'stroke-width': '1', 'stroke-dasharray': '4,4'
+                }));
+            });
+
+            // Round labels
+            for (let rd = 1; rd <= 6; rd++) {
+                const cx = margin.left + (rd - 0.5) * rdW;
+                svg.appendChild(svgEl('text', {
+                    x: cx, y: margin.top - 24, 'text-anchor': 'middle',
+                    'font-size': '13', 'font-weight': '600', fill: '#5A7868'
+                }, `R${rd}`));
+            }
+
+            // Vertical round dividers
+            for (let rd = 1; rd <= 5; rd++) {
+                const x = margin.left + rd * rdW;
+                svg.appendChild(svgEl('line', {
+                    x1: x, y1: margin.top, x2: x, y2: totalH - margin.bottom,
+                    stroke: '#C4C0B8', 'stroke-width': '1'
+                }));
+            }
+
+            // DEFENSE label
+            if (hasD && hasO) {
+                svg.appendChild(svgEl('text', {
+                    x: margin.left + 6, y: margin.top + 12,
+                    'font-size': '8', 'font-weight': '700',
+                    fill: '#34d399', opacity: '0.5', 'letter-spacing': '2'
+                }, 'DEFENSE'));
+            }
+
+            // Position rows
+            let curY = margin.top;
+            let sepDrawn = false;
+
+            visiblePositions.forEach((pos, posIdx) => {
+                const isOff = POSITIONS.offense.includes(pos);
+
+                if (isOff && !sepDrawn && sepSpace > 0) {
+                    const sy = curY + sepSpace / 2;
+                    svg.appendChild(svgEl('line', {
+                        x1: margin.left, y1: sy, x2: margin.left + chartW, y2: sy,
+                        stroke: '#C4D0CC', 'stroke-width': '1.5', 'stroke-dasharray': '6,4'
+                    }));
+                    svg.appendChild(svgEl('text', {
+                        x: margin.left + 6, y: sy + 13,
+                        'font-size': '8', 'font-weight': '700',
+                        fill: '#a3e635', opacity: '0.5', 'letter-spacing': '2'
+                    }, 'OFFENSE'));
+                    curY += sepSpace;
+                    sepDrawn = true;
+                }
+
+                const rowY = curY;
+                const rowBg = posIdx % 2 === 0 ? '#F8F3EA' : '#EFE9DE';
+                const accentColor = isOff ? '#a3e635' : '#34d399';
+
+                if (isOverview) {
+                    svg.appendChild(svgEl('rect', { x: margin.left, y: rowY, width: chartW, height: rowH, fill: rowBg }));
+                    svg.appendChild(svgEl('rect', { x: margin.left, y: rowY, width: 4, height: rowH, fill: accentColor, opacity: '0.45' }));
+                    svg.appendChild(svgEl('line', {
+                        x1: margin.left, y1: rowY + rowH, x2: margin.left + chartW, y2: rowY + rowH,
+                        stroke: '#EDE8DF', 'stroke-width': '1.5'
+                    }));
+                } else {
+                    const bH = rowH / 3;
+                    svg.appendChild(svgEl('rect', { x: margin.left, y: rowY,           width: chartW, height: bH, fill: rowBg }));
+                    svg.appendChild(svgEl('rect', { x: margin.left, y: rowY + bH,     width: chartW, height: bH, fill: 'rgba(52,211,153,0.07)' }));
+                    svg.appendChild(svgEl('rect', { x: margin.left, y: rowY + bH * 2, width: chartW, height: bH, fill: rowBg }));
+                    svg.appendChild(svgEl('rect', { x: margin.left, y: rowY, width: 4, height: rowH, fill: accentColor, opacity: '0.45' }));
+                    [bH, bH * 2].forEach(offset => {
+                        svg.appendChild(svgEl('line', {
+                            x1: margin.left + 4, y1: rowY + offset, x2: margin.left + chartW, y2: rowY + offset,
+                            stroke: '#D8D3CA', 'stroke-width': '0.8'
+                        }));
+                    });
+                    svg.appendChild(svgEl('line', {
+                        x1: margin.left, y1: rowY + rowH, x2: margin.left + chartW, y2: rowY + rowH,
+                        stroke: '#BCCAC4', 'stroke-width': '2'
+                    }));
+
+                    const bands = BAND_ASSIGNMENTS[pos];
+                    [bands.top, bands.mid, bands.bot].forEach((name, bi) => {
+                        const bandCY = rowY + bi * bH + bH / 2;
+                        const isMid = bi === 1;
+                        svg.appendChild(svgEl('text', {
+                            x: margin.left + chartW - 6, y: bandCY + 4, 'text-anchor': 'end',
+                            'font-size': '8.5', 'font-style': isMid ? 'italic' : 'normal',
+                            fill: isMid ? 'rgba(52,211,153,0.10)' : '#E6EDE8'
+                        }, name));
+                    });
+                }
+
+                svg.appendChild(svgEl('text', {
+                    x: margin.left - 10, y: rowY + rowH / 2 + 5, 'text-anchor': 'end',
+                    'font-size': '13', 'font-weight': '700', fill: '#1A2720'
+                }, pos));
+
+                for (let rd = 1; rd <= 6; rd++) {
+                    const allRdPlayers = getByPosRound(pos, rd);
+
+                    if (isOverview) {
+                        allRdPlayers.forEach((player, idx) => {
+                            const x = margin.left + (rd - 1) * rdW + rdW / (allRdPlayers.length + 1) * (idx + 1);
+                            drawDot(svg, x, rowY + rowH / 2, player, false, 0);
+                        });
+                    } else {
+                        const bH = rowH / 3;
+                        const bandMidY = [rowY + bH / 2, rowY + bH + bH / 2, rowY + bH * 2 + bH / 2];
+                        ['top', 'mid', 'bot'].forEach((key, bi) => {
+                            const bp = getInBand(pos, rd, key);
+                            bp.forEach((player) => {
+                                const rankIdx = allRdPlayers.indexOf(player);
+                                const x = margin.left + (rd - 1) * rdW + rdW / (allRdPlayers.length + 1) * (rankIdx + 1);
+                                const bandIdx = bp.indexOf(player);
+                                drawDot(svg, x, bandMidY[bi], player, currentZoom === 'players', bandIdx);
+                            });
+                        });
+                    }
+                }
+
+                curY += rowH;
+            });
+
+            updateLegend();
+        }
+
+        // ── Draw dot + label ──────────────────────────────────────────────────
+        function drawDot(svg, x, y, player, showLabel, bandIdx) {
+            const circle = svgEl('circle', {
+                cx: x, cy: y, r: '5',
+                fill: ROUND_COLORS[player.rd],
+                stroke: '#FFFFFF', 'stroke-width': '1.5', cursor: 'pointer'
+            });
+            circle.addEventListener('mouseenter', e => showTooltip(e, player));
+            circle.addEventListener('mouseleave', hideTooltip);
+            svg.appendChild(circle);
+
+            if (showLabel) {
+                const lx = x + 8;
+                const lineH = 11;
+                const isAbove = (bandIdx % 2 === 0);
+                const baseY = isAbove ? y - lineH * 2.4 : y + lineH * 0.6;
+
+                svg.appendChild(svgEl('text', {
+                    x: lx, y: baseY, 'font-size': '9', 'font-weight': '600',
+                    fill: '#FFFFFF', 'pointer-events': 'none'
+                }, player.name));
+
+                svg.appendChild(svgEl('text', {
+                    x: lx, y: baseY + lineH, 'font-size': '8', fill: '#5A7868', 'pointer-events': 'none'
+                }, `R${player.rd} · #${player.rank} · ${fmtHeight(player.height)} · ${player.weight}lbs`));
+
+                const str = fmtStrengths(player.s1, player.s2, player.s3);
+                if (str) {
+                    svg.appendChild(svgEl('text', {
+                        x: lx, y: baseY + lineH * 2, 'font-size': '7.5', fill: '#8AAA98', 'pointer-events': 'none'
+                    }, str));
+                }
+            }
+        }
+
+        // ── Tooltip ───────────────────────────────────────────────────────────
+        function showTooltip(event, player) {
+            const tooltip = document.getElementById('tooltip');
+            const str = fmtStrengths(player.s1, player.s2, player.s3);
+            tooltip.innerHTML = `
+                <div class="tooltip-line"><strong>${player.name}</strong> &mdash; ${player.pos}</div>
+                <div class="tooltip-line"><span class="tooltip-label">Role:</span> ${player.role}</div>
+                <div class="tooltip-line"><span class="tooltip-label">R${player.rd}, Pick #${player.rank}</span></div>
+                <div class="tooltip-line">${fmtHeight(player.height)} &nbsp;·&nbsp; ${player.weight} lbs</div>
+                ${str ? `<div class="tooltip-line" style="margin-top:5px;color:#5A7868;font-size:11px">${str}</div>` : ''}
+            `;
+            tooltip.style.display = 'block';
+            tooltip.style.left = (event.pageX + 14) + 'px';
+            tooltip.style.top = (event.pageY + 12) + 'px';
+        }
+
+        function hideTooltip() { document.getElementById('tooltip').style.display = 'none'; }
+
+        function updateLegend() {
+            const legend = document.getElementById('players-legend');
+            if (legend) legend.style.display = currentZoom === 'players' ? 'flex' : 'none';
+        }
+
+        // ── Controls ──────────────────────────────────────────────────────────
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentView = e.target.dataset.view;
+                drawChart();
+            });
+        });
+
+        document.querySelectorAll('[data-zoom]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                document.querySelectorAll('[data-zoom]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentZoom = e.target.dataset.zoom;
+                drawChart();
+            });
+        });
+
+        drawChart();
+    </script>
+</body>
+</html>

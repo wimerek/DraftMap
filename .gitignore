@@ -1,0 +1,17 @@
+# Secrets — never commit
+.streamlit/secrets.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (large files — push manually or via script)
+# data/*.csv   ← uncomment if you want to exclude data from git
