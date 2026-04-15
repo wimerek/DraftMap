@@ -4300,10 +4300,10 @@
         e.preventDefault();
       } else if (e.touches.length === 1) {
         // One finger: begin pan (same state variables as mouse drag)
+        // NOTE: no e.preventDefault() here — allows click events on buttons inside chartWrapper
         isDragging = true;
         dragStart   = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         cameraStart = { x: camera.x, y: camera.y };
-        e.preventDefault();
       }
     }, { passive: false });
 
