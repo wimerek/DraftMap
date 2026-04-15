@@ -61,7 +61,9 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
     """Convert raw Airtable records to a normalised DataFrame."""
     rows = []
     for r in records:
-        f = r.get("fields", {})
+        # Lowercase all keys so field names are case-insensitive
+        # (Airtable sometimes capitalises the primary field on CSV import)
+        f = {k.lower(): v for k, v in r.get("fields", {}).items()}
         rows.append({
             "name":   str(f.get("name",   "")),
             "pos":    str(f.get("pos",    "")),
