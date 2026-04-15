@@ -3726,7 +3726,7 @@
         x: String(vLabelX), y: String(pillMidY),
         'text-anchor': 'middle',
         'font-size': '8', 'font-weight': '700',
-        fill: '#AAB8C2', 'letter-spacing': '1.2',
+        fill: '#2C3E50', 'letter-spacing': '1.2',
         transform: `rotate(-90, ${vLabelX}, ${pillMidY})`
       }, 'Common Pick Results'));
 
@@ -3773,7 +3773,7 @@
       const arrowBotY  = margin.top + totalChartH;
       const segStroke  = 2.5;
       const tickHalf   = 5;
-      const aHead      = 6; // arrowhead triangle size
+      const aHead      = 10; // arrowhead triangle size
 
       // Y positions where tiers transition (for hash marks)
       const tierBoundaries = [
@@ -3816,15 +3816,17 @@
         svg.appendChild(svgEl('text', {
           x: x + dx, y: arrowTopY - aHead - 5,
           'text-anchor': anchor,
-          'font-size': '9', 'font-weight': '700',
-          fill: TIER_DEFS[0].color
+          'font-size': '9', 'font-weight': '800',
+          fill: TIER_DEFS[0].color,
+          stroke: 'rgba(255,255,255,0.7)', 'stroke-width': '1.2', 'paint-order': 'stroke fill'
         }, 'Top Prospects'));
 
         svg.appendChild(svgEl('text', {
           x: x + dx, y: arrowBotY + 12,
           'text-anchor': anchor,
-          'font-size': '9', 'font-weight': '700',
-          fill: TIER_DEFS[3].color
+          'font-size': '9', 'font-weight': '800',
+          fill: TIER_DEFS[3].color,
+          stroke: 'rgba(255,255,255,0.7)', 'stroke-width': '1.2', 'paint-order': 'stroke fill'
         }, 'Lower Prospects'));
       });
 
@@ -4010,7 +4012,7 @@
 
         // Round label
         svg.appendChild(svgEl('text', {
-          x: margin.left - 12, y: ry + rh / 2 + 5,
+          x: margin.left - 48, y: ry + rh / 2 + 5,
           'text-anchor': 'end',
           'font-size': '14', 'font-weight': '700',
           fill: '#4A6274'
