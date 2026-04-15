@@ -34,7 +34,8 @@ st.markdown(
     """
     <style>
     #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding-top: 1rem; padding-bottom: 0rem; }
+    .block-container { padding-top: 1rem; padding-bottom: 0rem; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100% !important; }
+    [data-testid="stAppViewContainer"], .stApp { background-color: #F5EFE4; }
     </style>
     """,
     unsafe_allow_html=True,
