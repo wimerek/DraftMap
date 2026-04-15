@@ -1,8 +1,9 @@
 """
-Admin.py — Password-protected admin panel.
+Admin.py — Password-protected admin panel for DraftMap.
 
-Edit player rankings, notes, upside, hawk flag.
-Writes changes back to GitHub via API commit.
+Player data is managed directly in Airtable (single source of truth).
+This page provides a quick link into the base plus a live data preview
+so you can confirm what the chart is currently reading.
 
 Access: Streamlit secrets required.
   [passwords]
@@ -10,7 +11,6 @@ Access: Streamlit secrets required.
 """
 
 import streamlit as st
-import pandas as pd
 from utils.data_loader import load_rankings
 
 st.set_page_config(page_title="Admin · DraftMap", layout="wide")
@@ -37,13 +37,40 @@ def check_password() -> bool:
 if not check_password():
     st.stop()
 
-# ── Admin UI (Phase 3) ────────────────────────────────────────────────────────
+# ── Admin UI ──────────────────────────────────────────────────────────────────
 st.title("DraftMap Admin")
-st.success("Authenticated.")
 
-st.info("Full admin editor coming in Phase 3.")
+st.markdown(
+    "Player data lives in **Airtable** — your single source of truth. "
+    "Edit players there directly. Changes appear in the live chart within 5 minutes."
+)
 
-# Preview data
+st.link_button(
+    "Open Airtable → Edit Players",
+    "https://airtable.com/apphHlEBLATe8hrII/tblwqv6lrfmREuVt4",
+    type="primary",
+)
+
+st.divider()
+
+# ── Live data preview ─────────────────────────────────────────────────────────
+st.subheader("Live Data Preview")
+st.caption("What the chart is currently reading from Airtable. Cache refreshes every 5 minutes.")
+
+if st.button("Force Refresh Now"):
+    load_rankings.clear()
+    st.rerun()
+
 df = load_rankings(2026)
-st.subheader(f"rankings_2026.csv — {len(df)} players")
-st.dataframe(df, use_container_width=True)
+
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Total Players", len(df))
+col2.metric("Rounds", df["rd"].nunique())
+col3.metric("Positions", df["pos"].nunique())
+col4.metric("Schools", df["school"].nunique())
+
+st.dataframe(
+    df.sort_values(["rd", "rank"]).reset_index(drop=True),
+    use_container_width=True,
+    hide_index=True,
+)
