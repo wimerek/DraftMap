@@ -36,6 +36,7 @@ st.markdown(
     #MainMenu, footer, header { visibility: hidden; }
     .block-container { padding-top: 1rem; padding-bottom: 0rem; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100% !important; }
     [data-testid="stAppViewContainer"], .stApp { background-color: #F5EFE4; }
+    iframe[title="components.v1.html"] { height: calc(100vh - 10px) !important; }
     </style>
     """,
     unsafe_allow_html=True,
