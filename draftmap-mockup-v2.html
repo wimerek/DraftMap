@@ -3441,10 +3441,10 @@
     };
 
     const TIER_DEFS = [
-      { name: 'Great', color: '#d97706', bg: 'rgba(217,119,6,0.07)' },
-      { name: 'Good', color: '#059669', bg: 'rgba(5,150,105,0.06)' },
-      { name: 'Solid', color: '#2563eb', bg: 'rgba(37,99,235,0.05)' },
-      { name: 'Role Player / Project', color: '#7c3aed', bg: 'rgba(124,58,237,0.04)' }
+      { name: 'Great',                color: '#1B3A5C', bg: 'rgba(27,58,92,0.06)'    },
+      { name: 'Good',                 color: '#1F6B72', bg: 'rgba(31,107,114,0.05)'  },
+      { name: 'Solid',                color: '#3D5A80', bg: 'rgba(61,90,128,0.04)'   },
+      { name: 'Role Player / Project',color: '#4A4A4A', bg: 'rgba(74,74,74,0.03)'   }
     ];
 
     // R1 Great/Good split: picks 1–15 out of ~21 R1 players
@@ -3719,16 +3719,6 @@
       const pillGapFromRounds = 28;
       const pillX = margin.left - 12 - pillGapFromRounds - pillW;
       const pillHdrX = pillX + pillW / 2;
-      // "Common Pick Results" — vertical text along outside left edge of pills
-      const pillMidY = margin.top + totalChartH / 2;
-      const vLabelX  = pillX - 8;
-      svg.appendChild(svgEl('text', {
-        x: String(vLabelX), y: String(pillMidY),
-        'text-anchor': 'middle',
-        'font-size': '8', 'font-weight': '700',
-        fill: '#2C3E50', 'letter-spacing': '1.2',
-        transform: `rotate(-90, ${vLabelX}, ${pillMidY})`
-      }, 'Common Pick Results'));
 
       tierBands.forEach(t => {
         // Background fill
@@ -3773,7 +3763,7 @@
       const arrowBotY  = margin.top + totalChartH;
       const segStroke  = 2.5;
       const tickHalf   = 5;
-      const aHead      = 10; // arrowhead triangle size
+      const aHead      = 6; // arrowhead triangle size
 
       // Y positions where tiers transition (for hash marks)
       const tierBoundaries = [
@@ -3783,7 +3773,7 @@
       ];
 
       [
-        { x: margin.left - 16,          anchor: 'end',   dx: -4 },
+        { x: pillX - 20,                anchor: 'end',   dx: -4 },
         { x: margin.left + chartW + 16, anchor: 'start', dx:  4 }
       ].forEach(({ x, anchor, dx }) => {
 
@@ -3807,7 +3797,8 @@
 
         gGraphic.appendChild(svgEl('polygon', {
           points: `${x},${arrowTopY - aHead} ${x - aHead},${arrowTopY} ${x + aHead},${arrowTopY}`,
-          fill: TIER_DEFS[0].color
+          fill: TIER_DEFS[0].color,
+          stroke: 'rgba(0,0,0,0.35)', 'stroke-width': '1.2', 'stroke-linejoin': 'round'
         }));
 
         svg.appendChild(gGraphic);
@@ -4012,7 +4003,7 @@
 
         // Round label
         svg.appendChild(svgEl('text', {
-          x: margin.left - 48, y: ry + rh / 2 + 5,
+          x: pillX - 48, y: ry + rh / 2 + 5,
           'text-anchor': 'end',
           'font-size': '14', 'font-weight': '700',
           fill: '#4A6274'
