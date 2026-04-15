@@ -4046,9 +4046,9 @@
     function drawDot(svg, x, y, player, showLabel, idx) {
       const sc = SCHOOL_COLORS[player.school] || { fill: '#9CA3AF', stroke: '#6B7280' };
       const dotRadius =
-        zoomLevel === 0 ? 3.2 :
-          zoomLevel === 1 ? 4 :
-            5;
+        zoomLevel === 0 ? 5.5 :
+          zoomLevel === 1 ? 7 :
+            8.75;
 
       const circle = svgEl('circle', {
         cx: x,
@@ -4056,11 +4056,12 @@
         r: String(dotRadius),
         fill: sc.fill,
         stroke: '#4A4A4A',
-        'stroke-width': zoomLevel <= 1 ? '1.1' : '1.5',
+        'stroke-width': zoomLevel <= 1 ? '1.5' : '2',
         cursor: 'pointer'
       });
       circle.addEventListener('mouseenter', e => showTooltip(e, player));
       circle.addEventListener('mouseleave', hideTooltip);
+      circle.addEventListener('click', e => { e.stopPropagation(); showTooltip(e, player); });
       svg.appendChild(circle);
 
       if (showLabel) {
@@ -4124,7 +4125,20 @@
     // ── Tooltip ───────────────────────────────────────────────────────────
     function showTooltip(event, player) {
       const tt = document.getElementById('tooltip');
-      const str = fmtStrengths(player.s1, player.s2, player.s3);
+
+      // Strengths: one per line, progressive boldness, light colors for dark background
+      const strengths = [player.s1, player.s2, player.s3].filter(s => s && s !== 'N/A');
+      const strengthStyles = [
+        { color: '#B8D4C4', fontWeight: '700' }, // Primary — lightest, boldest
+        { color: '#9ABFAD', fontWeight: '600' }, // Secondary
+        { color: '#7EA896', fontWeight: '500' }  // Supporting
+      ];
+      const strHtml = strengths.length
+        ? `<div style="margin-top:6px">${strengths.map((s, i) => {
+            const st = strengthStyles[i] || strengthStyles[2];
+            return `<div style="color:${st.color};font-weight:${st.fontWeight};font-size:11px">• ${s}</div>`;
+          }).join('')}</div>`
+        : '';
 
       tt.innerHTML = `
         <div class="tooltip-line"><strong>${player.name}</strong> &mdash; ${player.pos}</div>
@@ -4132,7 +4146,7 @@
         <div class="tooltip-line"><span class="tooltip-label">Role:</span> ${player.role}</div>
         <div class="tooltip-line"><span class="tooltip-label">R${player.rd}, Pick #${player.rank}</span></div>
         <div class="tooltip-line">${fmtHeight(player.height)} &nbsp;·&nbsp; ${player.weight} lbs</div>
-        ${str ? `<div class="tooltip-line" style="margin-top:5px;color:#5A7868;font-size:11px">${str}</div>` : ''}
+        ${strHtml}
     `;
 
       tt.style.display = 'block';
@@ -4306,6 +4320,7 @@
         // One finger: begin pan (same state variables as mouse drag)
         // NOTE: no e.preventDefault() here — allows click events on buttons inside chartWrapper
         isDragging = true;
+        hideTooltip(); // dismiss any open player card when panning starts
         dragStart   = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         cameraStart = { x: camera.x, y: camera.y };
       }
@@ -4356,6 +4371,9 @@
       const rect = viewport.getBoundingClientRect();
       zoomAtPoint(camera.scale * 0.8, rect.left + rect.width / 2, rect.top + rect.height / 2);
     });
+
+    // Dismiss tooltip on any click outside a dot (dots use stopPropagation to prevent this)
+    document.addEventListener('click', hideTooltip);
 
     drawChart();
     updateZoomControl();
