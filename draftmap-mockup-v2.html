@@ -4235,8 +4235,11 @@
       camera.y = pointY - worldY * camera.scale;
 
       updateZoomControl();
-      drawChart();
-      applyCameraTransform();
+      applyCameraTransform(); // immediate — just a CSS transform, very cheap
+
+      // Debounce the expensive SVG redraw so rapid pinch events don't pile up
+      clearTimeout(zoomTimer);
+      zoomTimer = setTimeout(() => drawChart(), ZOOM_DEBOUNCE_MS);
     }
 
     // Desktop: mouse-wheel zoom on the chart wrapper
