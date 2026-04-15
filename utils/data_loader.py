@@ -58,24 +58,35 @@ def _fetch_airtable_records() -> list[dict]:
 
 
 def _records_to_df(records: list[dict]) -> pd.DataFrame:
-    """Convert raw Airtable records to a normalised DataFrame."""
+    """Convert raw Airtable records to a normalised DataFrame.
+
+    Airtable field names (as of current base setup):
+      "Player Name"        → name
+      "Position"           → pos
+      "Draft Round"        → rd
+      "Rank"               → rank
+      "Height (NFL format)"→ height
+      "Weight (lbs)"       → weight
+      "Role"               → role
+      "s1" / "s2" / "s3"  → s1, s2, s3
+      "School"             → school
+    """
     rows = []
     for r in records:
-        # Lowercase all keys so field names are case-insensitive
-        # (Airtable sometimes capitalises the primary field on CSV import)
+        # Lowercase all keys for case-insensitive lookup
         f = {k.lower(): v for k, v in r.get("fields", {}).items()}
         rows.append({
-            "name":   str(f.get("name",   "")),
-            "pos":    str(f.get("pos",    "")),
-            "rd":     f.get("rd",     0),
-            "rank":   f.get("rank",   0),
-            "height": str(f.get("height", "N/A")),
-            "weight": f.get("weight", 0),
-            "role":   str(f.get("role",   "Balanced")),
-            "s1":     str(f.get("s1",     "N/A")),
-            "s2":     str(f.get("s2",     "N/A")),
-            "s3":     str(f.get("s3",     "N/A")),
-            "school": str(f.get("school", "")),
+            "name":   str(f.get("player name",         "")),
+            "pos":    str(f.get("position",            "")),
+            "rd":     f.get("draft round",             0),
+            "rank":   f.get("rank",                    0),
+            "height": str(f.get("height (nfl format)", "N/A")),
+            "weight": f.get("weight (lbs)",            0),
+            "role":   str(f.get("role",                "Balanced")),
+            "s1":     str(f.get("s1",                  "N/A")),
+            "s2":     str(f.get("s2",                  "N/A")),
+            "s3":     str(f.get("s3",                  "N/A")),
+            "school": str(f.get("school",              "")),
         })
 
     df = pd.DataFrame(rows)

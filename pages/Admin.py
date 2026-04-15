@@ -10,7 +10,6 @@ Access: Streamlit secrets required.
   derek = "your-password-here"
 """
 
-import requests
 import streamlit as st
 from utils.data_loader import load_rankings
 
@@ -51,25 +50,6 @@ st.link_button(
     "https://airtable.com/apphHlEBLATe8hrII/tblwqv6lrfmREuVt4",
     type="primary",
 )
-
-st.divider()
-
-# ── DEBUG: show raw Airtable field names (remove once field mapping is confirmed) ──
-with st.expander("🔧 Debug — Raw Airtable field names"):
-    try:
-        cfg = st.secrets["airtable"]
-        resp = requests.get(
-            f"https://api.airtable.com/v0/{cfg['base_id']}/{cfg['table_id']}",
-            headers={"Authorization": f"Bearer {cfg['token']}"},
-            params={"pageSize": 1},
-            timeout=10,
-        )
-        raw = resp.json()
-        first = raw.get("records", [{}])[0].get("fields", {})
-        st.write("Field names from first record:", list(first.keys()))
-        st.json(first)
-    except Exception as e:
-        st.error(str(e))
 
 st.divider()
 
