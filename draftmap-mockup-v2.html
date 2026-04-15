@@ -3740,8 +3740,9 @@
         svg.appendChild(svgEl('rect', {
           x: px, y: py,
           width: pillW, height: pH,
-          rx: '8', fill: 'none',
-          stroke: t.color, 'stroke-width': '1.2', opacity: '0.9'
+          rx: '8', fill: t.color,
+          'fill-opacity': '0.85',
+          stroke: t.color, 'stroke-width': '1.2'
         }));
         // Split long labels into stacked lines
         const labelLines = t.name === 'Role Player / Project'
@@ -3755,11 +3756,73 @@
           svg.appendChild(svgEl('text', {
             x: cx, y: startY + i * lineH,
             'text-anchor': 'middle', 'font-size': '10', 'font-weight': '700',
-            fill: t.color
+            fill: '#FFFFFF'
           }, line));
         });
       });
 
+
+      // ── 1b. Vertical direction arrows (left + right) ─────────────────
+      const arrowTopY  = rdY[1];
+      const arrowBotY  = margin.top + totalChartH;
+      const segStroke  = 2.5;
+      const tickHalf   = 5;
+      const aHead      = 6; // arrowhead triangle size
+
+      // Y positions where tiers transition (for hash marks)
+      const tierBoundaries = [
+        rdY[1] + greatH,  // Great → Good
+        rdY[3],           // Good → Solid
+        rdY[4],           // Solid → Role Player
+      ];
+
+      [
+        { x: 14,              opacity: '1',   anchor: 'start', dx:  4 },
+        { x: finalSvgW - 14, opacity: '0.7', anchor: 'end',   dx: -4 }
+      ].forEach(({ x, opacity, anchor, dx }) => {
+        const g = svgEl('g', { opacity });
+
+        // Colored line segments — one per tier
+        tierBands.forEach(t => {
+          g.appendChild(svgEl('line', {
+            x1: x, y1: t.y1, x2: x, y2: t.y2,
+            stroke: t.color, 'stroke-width': String(segStroke),
+            'stroke-linecap': 'round'
+          }));
+        });
+
+        // Hash marks at tier boundaries
+        tierBoundaries.forEach(by => {
+          g.appendChild(svgEl('line', {
+            x1: x - tickHalf, y1: by, x2: x + tickHalf, y2: by,
+            stroke: '#8A9BAA', 'stroke-width': '1.5'
+          }));
+        });
+
+        // Upward arrowhead at top (Great color)
+        g.appendChild(svgEl('polygon', {
+          points: `${x},${arrowTopY - aHead} ${x - aHead},${arrowTopY} ${x + aHead},${arrowTopY}`,
+          fill: TIER_DEFS[0].color
+        }));
+
+        // "Top Prospects" label above arrowhead
+        g.appendChild(svgEl('text', {
+          x: x + dx, y: arrowTopY - aHead - 5,
+          'text-anchor': anchor,
+          'font-size': '7.5', 'font-weight': '700',
+          fill: TIER_DEFS[0].color
+        }, 'Top Prospects'));
+
+        // "Lower Prospects" label below arrow
+        g.appendChild(svgEl('text', {
+          x: x + dx, y: arrowBotY + 12,
+          'text-anchor': anchor,
+          'font-size': '7.5', 'font-weight': '600',
+          fill: TIER_DEFS[3].color
+        }, 'Lower Prospects'));
+
+        svg.appendChild(g);
+      });
 
       // ── 2. Column backgrounds + position headers ─────────────────────
       visiblePositions.forEach((pos, posIdx) => {
