@@ -3719,10 +3719,15 @@
       const pillGapFromRounds = 28;
       const pillX = margin.left - 12 - pillGapFromRounds - pillW;
       const pillHdrX = pillX + pillW / 2;
+      // "Common Pick Results" — vertical text along outside left edge of pills
+      const pillMidY = margin.top + totalChartH / 2;
+      const vLabelX  = pillX - 8;
       svg.appendChild(svgEl('text', {
-        x: pillHdrX, y: margin.top - 8,
-        'text-anchor': 'middle', 'font-size': '9', 'font-weight': '700',
-        fill: '#AAB8C2', 'letter-spacing': '0.5'
+        x: String(vLabelX), y: String(pillMidY),
+        'text-anchor': 'middle',
+        'font-size': '8', 'font-weight': '700',
+        fill: '#AAB8C2', 'letter-spacing': '1.2',
+        transform: `rotate(-90, ${vLabelX}, ${pillMidY})`
       }, 'Common Pick Results'));
 
       tierBands.forEach(t => {
@@ -3755,8 +3760,9 @@
         labelLines.forEach((line, i) => {
           svg.appendChild(svgEl('text', {
             x: cx, y: startY + i * lineH,
-            'text-anchor': 'middle', 'font-size': '10', 'font-weight': '700',
-            fill: '#FFFFFF'
+            'text-anchor': 'middle', 'font-size': '10', 'font-weight': '800',
+            fill: '#FFFFFF',
+            stroke: 'rgba(0,0,0,0.25)', 'stroke-width': '0.5', 'paint-order': 'stroke fill'
           }, line));
         });
       });
@@ -3777,51 +3783,49 @@
       ];
 
       [
-        { x: pillX - 16,              opacity: '0.7', anchor: 'end',   dx: -4 },
-        { x: margin.left + chartW + 16, opacity: '0.7', anchor: 'start', dx:  4 }
-      ].forEach(({ x, opacity, anchor, dx }) => {
-        const g = svgEl('g', { opacity });
+        { x: margin.left - 16,          anchor: 'end',   dx: -4 },
+        { x: margin.left + chartW + 16, anchor: 'start', dx:  4 }
+      ].forEach(({ x, anchor, dx }) => {
 
-        // Colored line segments — one per tier
+        // Graphic group at 0.7 opacity (lines + arrowhead only)
+        const gGraphic = svgEl('g', { opacity: '0.7' });
+
         tierBands.forEach(t => {
-          g.appendChild(svgEl('line', {
+          gGraphic.appendChild(svgEl('line', {
             x1: x, y1: t.y1, x2: x, y2: t.y2,
             stroke: t.color, 'stroke-width': String(segStroke),
             'stroke-linecap': 'round'
           }));
         });
 
-        // Hash marks at tier boundaries
         tierBoundaries.forEach(by => {
-          g.appendChild(svgEl('line', {
+          gGraphic.appendChild(svgEl('line', {
             x1: x - tickHalf, y1: by, x2: x + tickHalf, y2: by,
             stroke: '#8A9BAA', 'stroke-width': '1.5'
           }));
         });
 
-        // Upward arrowhead at top (Great color)
-        g.appendChild(svgEl('polygon', {
+        gGraphic.appendChild(svgEl('polygon', {
           points: `${x},${arrowTopY - aHead} ${x - aHead},${arrowTopY} ${x + aHead},${arrowTopY}`,
           fill: TIER_DEFS[0].color
         }));
 
-        // "Top Prospects" label above arrowhead
-        g.appendChild(svgEl('text', {
+        svg.appendChild(gGraphic);
+
+        // Text labels at full opacity — separate group so SVG group opacity doesn't wash them out
+        svg.appendChild(svgEl('text', {
           x: x + dx, y: arrowTopY - aHead - 5,
           'text-anchor': anchor,
           'font-size': '9', 'font-weight': '700',
           fill: TIER_DEFS[0].color
         }, 'Top Prospects'));
 
-        // "Lower Prospects" label below arrow
-        g.appendChild(svgEl('text', {
+        svg.appendChild(svgEl('text', {
           x: x + dx, y: arrowBotY + 12,
           'text-anchor': anchor,
           'font-size': '9', 'font-weight': '700',
           fill: TIER_DEFS[3].color
         }, 'Lower Prospects'));
-
-        svg.appendChild(g);
       });
 
       // ── 2. Column backgrounds + position headers ─────────────────────
