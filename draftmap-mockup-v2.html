@@ -3615,8 +3615,9 @@
       svg.innerHTML = '';
 
       const visiblePositions = getVisiblePositions();
-      const isOverview = zoomLevel <= 2;
-      const isRoles = zoomLevel >= 3;
+      const ROLES_THRESHOLD = 0.88; // scale at which role lanes appear (≈ 2 zoom-outs from original 1.35)
+      const isOverview = camera.scale < ROLES_THRESHOLD;
+      const isRoles = camera.scale >= ROLES_THRESHOLD;
       const isPlayers = zoomLevel >= 4;
 
       const hasD = visiblePositions.some(p => POSITIONS.defense.includes(p));
@@ -3794,7 +3795,7 @@
 
         svg.appendChild(svgEl('text', {
           x: colX + colW / 2,
-          y: zoomLevel <= 2 ? 44 : 36,
+          y: isOverview ? 44 : 36,
           'text-anchor': 'middle',
           'font-size': String(headerFontSize),
           'font-weight': '900',
@@ -3803,7 +3804,7 @@
         }, pos));
 
         // Role sub-column headers (roles/players mode)
-        if (zoomLevel >= 3) {
+        if (isRoles) {
           const bands = BAND_ASSIGNMENTS[pos];
           const subLabels = [bands.top, bands.mid, bands.bot];
 
@@ -3967,7 +3968,7 @@
           const rh = rdH[rd];
           const allRd = getByPosRound(pos, rd);
 
-          if (zoomLevel <= 2) {
+          if (isOverview) {
             const spread = spreadDots(allRd, ry, rh);
             spread.forEach(({ y, player }) => {
               const x = colX + colW / 2;
