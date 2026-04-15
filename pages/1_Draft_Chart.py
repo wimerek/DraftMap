@@ -109,4 +109,4 @@ if n_subs == 0:
 # ── Render ─────────────────────────────────────────────────────────────────────
 # Height of 1650px fits Overview mode fully; Players mode requires scrolling.
 # scrolling=True adds a vertical scrollbar to the iframe when content overflows.
-components.html(chart_html, height=1650, scrolling=True)
+components.html(chart_html, height=900, scrolling=False)
