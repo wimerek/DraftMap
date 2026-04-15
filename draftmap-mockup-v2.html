@@ -54,6 +54,15 @@
       flex-wrap: wrap;
     }
 
+    .chart-hint {
+      margin-left: auto;
+      font-size: 11px;
+      font-weight: 500;
+      color: #7A8E9A;
+      letter-spacing: 0.2px;
+      font-style: italic;
+    }
+
     .button-group {
       display: flex;
       gap: 8px;
@@ -348,6 +357,7 @@
         <button class="btn" data-view="defense">Defense</button>
       </div>
       <div class="year-label">2026 Draft Class</div>
+      <div class="chart-hint">Scroll or pinch to zoom &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; player details appear as you zoom in</div>
     </div>
 
     <div class="chart-wrapper">
@@ -3773,7 +3783,7 @@
       ];
 
       [
-        { x: pillX + pillW + 4,         anchor: 'start', dx:  4 },
+        { x: pillX + pillW + 10,        anchor: 'end',   dx: -4 },
         { x: margin.left + chartW + 16, anchor: 'start', dx:  4 }
       ].forEach(({ x, anchor, dx }) => {
 
@@ -4005,7 +4015,7 @@
         svg.appendChild(svgEl('text', {
           x: margin.left - 8, y: ry + rh / 2 + 5,
           'text-anchor': 'end',
-          'font-size': '14', 'font-weight': '700',
+          'font-size': '12', 'font-weight': '700',
           fill: '#4A6274'
         }, `R${rd}`));
 
