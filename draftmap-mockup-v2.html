@@ -7,7 +7,9 @@
   <title>DraftMap - Flipped Layout</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap"
+    rel="stylesheet">
   <style>
     * {
       margin: 0;
@@ -27,23 +29,91 @@
       margin: 0 auto;
     }
 
-    header {
-      margin-bottom: 32px;
+    /* ============ DraftMap header ============ */
+    .dm-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 20px;
+      border-bottom: 1px solid rgba(11, 34, 57, 0.1);
+      margin-bottom: 28px;
+      gap: 16px;
+      flex-wrap: wrap;
     }
 
-    .app-title {
-      font-size: 28px;
+    .dm-brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .dm-brand img {
+      height: 60px;
+      width: auto;
+      display: block;
+      border-radius: 10px;
+      box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.6) inset,
+        0 1px 2px rgba(11, 34, 57, 0.08),
+        0 6px 16px rgba(11, 34, 57, 0.14),
+        0 12px 28px rgba(11, 34, 57, 0.08);
+    }
+
+    .dm-wordmark {
+      font-family: 'Inter', sans-serif;
       font-weight: 800;
-      color: #0B2239;
-      margin-bottom: 4px;
-      text-transform: uppercase;
+      font-size: 32px;
       letter-spacing: -0.5px;
+      color: #0B2239;
+      line-height: 1;
     }
 
-    .app-tagline {
-      font-size: 14px;
+    .dm-beta-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 12px;
+      background: rgba(212, 160, 23, 0.12);
+      border: 1px solid rgba(212, 160, 23, 0.4);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #A67B00;
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 0.04em;
+    }
+
+    .dm-beta-pill::before {
+      content: "";
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #D4A017;
+    }
+
+    /* ============ DraftMap footer ============ */
+    .dm-footer {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(11, 34, 57, 0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .dm-foot-caption {
+      font-size: 13px;
       color: #4A6274;
-      font-weight: 500;
+      font-style: italic;
+    }
+
+    .dm-foot-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #7A8E9A;
+      letter-spacing: 0.04em;
     }
 
     .controls {
@@ -345,9 +415,12 @@
 
 <body>
   <div class="container">
-    <header>
-      <div class="app-title">DraftMap</div>
-      <div class="app-tagline">NFL Draft at a glance. Find your sleeper.</div>
+    <header class="dm-header">
+      <div class="dm-brand">
+        <img src="brand/draftmap-mark.svg" alt="DraftMap" />
+        <div class="dm-wordmark">DraftMap</div>
+      </div>
+      <div class="dm-beta-pill">LIVE BETA · 2026</div>
     </header>
 
     <div class="controls">
@@ -357,7 +430,8 @@
         <button class="btn" data-view="defense">Defense</button>
       </div>
       <div class="year-label">2026 Draft Class</div>
-      <div class="chart-hint">Scroll or pinch to zoom &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; player details appear as you zoom in</div>
+      <div class="chart-hint">Scroll or pinch to zoom &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; player details appear as
+        you zoom in</div>
     </div>
 
     <div class="chart-wrapper">
@@ -394,6 +468,11 @@
         <button class="zoom-btn" id="zoom-out-btn" title="Zoom out">−</button>
       </div>
     </div>
+
+    <footer class="dm-footer">
+      <div class="dm-foot-caption">See the draft. Don't just read about it.</div>
+      <div class="dm-foot-meta">DRAFTMAP · 2026</div>
+    </footer>
   </div>
 
   <div id="tooltip" class="tooltip" style="display:none;"></div>
@@ -3451,10 +3530,10 @@
     };
 
     const TIER_DEFS = [
-      { name: 'Great',                color: '#B45309', bg: 'rgba(180,83,9,0.06)'     },
-      { name: 'Good',                 color: '#0E7490', bg: 'rgba(14,116,144,0.05)'   },
-      { name: 'Solid',                color: '#475DA7', bg: 'rgba(71,93,167,0.04)'    },
-      { name: 'Role Player / Project',color: '#6B7280', bg: 'rgba(107,114,128,0.03)' }
+      { name: 'Great', color: '#B45309', bg: 'rgba(180,83,9,0.06)' },
+      { name: 'Good', color: '#0E7490', bg: 'rgba(14,116,144,0.05)' },
+      { name: 'Solid', color: '#475DA7', bg: 'rgba(71,93,167,0.04)' },
+      { name: 'Role Player / Project', color: '#6B7280', bg: 'rgba(107,114,128,0.03)' }
     ];
 
     // R1 Great/Good split: picks 1–15 out of ~21 R1 players
@@ -3769,11 +3848,11 @@
 
 
       // ── 1b. Vertical direction arrows (left + right) ─────────────────
-      const arrowTopY  = rdY[1];
-      const arrowBotY  = margin.top + totalChartH;
-      const segStroke  = 2.5;
-      const tickHalf   = 5;
-      const aHead      = 6; // arrowhead triangle size
+      const arrowTopY = rdY[1];
+      const arrowBotY = margin.top + totalChartH;
+      const segStroke = 2.5;
+      const tickHalf = 5;
+      const aHead = 6; // arrowhead triangle size
 
       // Y positions where tiers transition (for hash marks)
       const tierBoundaries = [
@@ -3783,8 +3862,8 @@
       ];
 
       [
-        { x: pillX + pillW + 10,        anchor: 'end',   dx: -4 },
-        { x: margin.left + chartW + 16, anchor: 'start', dx:  4 }
+        { x: pillX + pillW + 10, anchor: 'end', dx: -4 },
+        { x: margin.left + chartW + 16, anchor: 'start', dx: 4 }
       ].forEach(({ x, anchor, dx }) => {
 
         // Graphic group at 0.7 opacity (lines + arrowhead only)
@@ -4205,9 +4284,9 @@
       ];
       const strHtml = strengths.length
         ? `<div style="margin-top:6px">${strengths.map((s, i) => {
-            const st = strengthStyles[i] || strengthStyles[2];
-            return `<div style="color:${st.color};font-weight:${st.fontWeight};font-size:11px">• ${s}</div>`;
-          }).join('')}</div>`
+          const st = strengthStyles[i] || strengthStyles[2];
+          return `<div style="color:${st.color};font-weight:${st.fontWeight};font-size:11px">• ${s}</div>`;
+        }).join('')}</div>`
         : '';
 
       tt.innerHTML = `
@@ -4391,7 +4470,7 @@
         // NOTE: no e.preventDefault() here — allows click events on buttons inside chartWrapper
         isDragging = true;
         hideTooltip(); // dismiss any open player card when panning starts
-        dragStart   = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+        dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         cameraStart = { x: camera.x, y: camera.y };
       }
     }, { passive: false });
