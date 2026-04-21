@@ -35,10 +35,20 @@ st.markdown(
     """
     <style>
     #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding-top: 1rem; padding-bottom: 0rem; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100% !important; }
+    .block-container { padding-top: 0.4rem; padding-bottom: 0rem; padding-left: 1rem !important; padding-right: 1rem !important; max-width: 100% !important; }
     [data-testid="stAppViewContainer"], .stApp { background-color: #F5EFE4; }
     </style>
     """,
+    unsafe_allow_html=True,
+)
+
+# ── List View nav link (Streamlit layer — iframe-safe) ─────────────────────────
+st.markdown(
+    '<div style="text-align:right; padding: 2px 4px 4px 0;">'
+    '<a href="/Position_Breakdown" style="font-size:11px; font-weight:700; color:#4A6274; '
+    'text-decoration:none; text-transform:uppercase; letter-spacing:0.6px; '
+    'border:1.5px solid rgba(74,98,116,0.35); border-radius:4px; padding:5px 13px;">'
+    '&#9776;&nbsp;&nbsp;List View</a></div>',
     unsafe_allow_html=True,
 )
 

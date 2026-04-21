@@ -135,8 +135,8 @@ HEIGHT_THRESHOLDS: dict[str, tuple] = {
 GRADED_NUMERIC = {"arm", "hand", "forty", "split10", "vertical", "broad", "cone3", "shuttle", "bench", "weight"}
 
 GRADE_BG = {
-    "great": "background-color: rgba(180, 83, 9, 0.20); color: #5A3800;",
-    "good":  "background-color: rgba(14, 116, 144, 0.18); color: #0B3D4A;",
+    "great": "background-color: rgba(212, 160, 23, 0.65); color: #ffffff;",
+    "good":  "background-color: rgba(212, 160, 23, 0.30); color: #ffffff;",
     "":      "",
 }
 
