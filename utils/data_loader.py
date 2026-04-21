@@ -87,6 +87,16 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
             "s2":     str(f.get("s2",                  "N/A")),
             "s3":     str(f.get("s3",                  "N/A")),
             "school": str(f.get("school",              "")),
+            # Combine measurables — nullable floats, None if not recorded
+            "arm":    f.get("arm length (inches)"),
+            "hand":   f.get("hand size (inches)"),
+            "forty":  f.get("40-yard dash (s)"),
+            "split10": f.get("10-yard split (s)"),
+            "vertical": f.get("vertical jump (inches)"),
+            "broad":  f.get("broad jump (inches)"),
+            "cone3":  f.get("3-cone drill (s)"),
+            "shuttle": f.get("shuttle (s)"),
+            "bench":  f.get("bench press (reps)"),
         })
 
     df = pd.DataFrame(rows)
@@ -96,6 +106,11 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
     df["rd"]     = pd.to_numeric(df["rd"],     errors="coerce").fillna(0).astype(int)
     df["rank"]   = pd.to_numeric(df["rank"],   errors="coerce").fillna(0).astype(int)
     df["weight"] = pd.to_numeric(df["weight"], errors="coerce").fillna(0).astype(int)
+
+    # Measurables stay as nullable floats (NaN where not recorded — do NOT fill with 0)
+    for _col in ["arm", "hand", "forty", "split10", "vertical", "broad", "cone3", "shuttle", "bench"]:
+        if _col in df.columns:
+            df[_col] = pd.to_numeric(df[_col], errors="coerce")
 
     # Any role that doesn't match a known band label falls through to Balanced
     # in the chart JS — no remapping needed here.

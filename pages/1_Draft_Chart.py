@@ -15,6 +15,7 @@ Chart design:
 
 import json
 import re
+from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -60,6 +61,14 @@ def row_to_player(row: pd.Series) -> dict:
         except (ValueError, TypeError):
             return default
 
+    def safe_float(val):
+        """Return float or None (never NaN — json.dumps can't serialize NaN)."""
+        try:
+            v = float(val)
+            return None if pd.isna(v) else round(v, 3)
+        except (ValueError, TypeError):
+            return None
+
     return {
         "name":   safe_str(row.get("name"), ""),
         "pos":    safe_str(row.get("pos"), ""),
@@ -72,10 +81,28 @@ def row_to_player(row: pd.Series) -> dict:
         "s2":     safe_str(row.get("s2")),
         "s3":     safe_str(row.get("s3")),
         "school": safe_str(row.get("school")),
+        # Combine measurables — null when not recorded
+        "arm":    safe_float(row.get("arm")),
+        "hand":   safe_float(row.get("hand")),
+        "forty":  safe_float(row.get("forty")),
+        "split10": safe_float(row.get("split10")),
+        "vertical": safe_float(row.get("vertical")),
+        "broad":  safe_float(row.get("broad")),
+        "cone3":  safe_float(row.get("cone3")),
+        "shuttle": safe_float(row.get("shuttle")),
+        "bench":  safe_float(row.get("bench")),
     }
 
 
 players_list = [row_to_player(row) for _, row in df.iterrows()]
+
+# Compute position rank (posRank) — rank within each position group, sorted by overall rank.
+# Used for the card ID label (e.g. "WR-03").
+_pos_counters: dict = defaultdict(int)
+for _p in sorted(players_list, key=lambda x: (x["pos"], x["rank"])):
+    _pos_counters[_p["pos"]] += 1
+    _p["posRank"] = _pos_counters[_p["pos"]]
+
 players_json = json.dumps(players_list, indent=2)
 
 # ── Load chart template and inject live data ───────────────────────────────────
