@@ -99,7 +99,7 @@ players_list = [row_to_player(row) for _, row in df.iterrows()]
 # Compute position rank (posRank) — rank within each position group, sorted by overall rank.
 # Used for the card ID label (e.g. "WR-03").
 _pos_counters: dict = defaultdict(int)
-for _p in sorted(players_list, key=lambda x: (x["pos"], x["rank"])):
+for _p in sorted(players_list, key=lambda x: (x["pos"], x["rank"] if x["rank"] > 0 else 9999)):
     _pos_counters[_p["pos"]] += 1
     _p["posRank"] = _pos_counters[_p["pos"]]
 

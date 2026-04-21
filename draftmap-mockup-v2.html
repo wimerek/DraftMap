@@ -912,7 +912,7 @@
             <div class="pcm-role-pennant" id="pcmRole"></div>
           </div>
           <div class="pcm-strengths-panel">
-            <div class="pcm-profile-label">Strength Profile</div>
+            <div class="pcm-profile-label">Strengths Profile</div>
             <div class="pcm-strength-stack">
               <div class="pcm-strength-row">
                 <div class="pcm-pennant-tail">
@@ -4123,7 +4123,7 @@
 
     function getByPosRound(pos, rd) {
       return players.filter(p => p.pos === pos && p.rd === rd)
-        .sort((a, b) => a.rank - b.rank);
+        .sort((a, b) => (a.rank || 9999) - (b.rank || 9999));
     }
 
     function getInBand(pos, rd, band) {
