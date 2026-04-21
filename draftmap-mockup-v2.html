@@ -133,6 +133,29 @@
       font-style: italic;
     }
 
+    .view-toggle-btn {
+      padding: 6px 13px;
+      border: 1.5px solid rgba(74, 98, 116, 0.35);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: #4A6274;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .view-toggle-btn:hover {
+      background: rgba(11, 34, 57, 0.06);
+      border-color: #4A6274;
+      color: #0B2239;
+    }
+
     .button-group {
       display: flex;
       gap: 8px;
@@ -840,6 +863,7 @@
       <div class="year-label">2026 Draft Class</div>
       <div class="chart-hint">Scroll or pinch to zoom &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; player details appear as
         you zoom in</div>
+      <button class="view-toggle-btn" onclick="window.top.location.href='/Position_Breakdown'">☰ &nbsp;List View</button>
     </div>
 
     <div class="chart-wrapper">
