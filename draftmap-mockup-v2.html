@@ -429,13 +429,15 @@
     /* Card wrapper — scrollable container */
     #pcm-wrap {
       position: relative;
-      width: min(820px, 92vw);
+      width: min(1060px, 94vw);
       max-height: 90vh;
       overflow-y: auto;
       overflow-x: hidden;
       background: #f7f1e4;
       border: 2px solid rgba(20, 16, 12, 0.72);
-      padding: 22px 24px 28px;
+      outline: 2px solid rgba(20, 16, 12, 0.55);
+      outline-offset: -12px;
+      padding: 22px 24px 52px;
 
       /* CSS vars for the card — defaults; overridden per-player by JS */
       --pcm-bg: #ece7dc;
@@ -469,15 +471,7 @@
       --pcm-team-primary-wash: rgba(74, 74, 74, 0.20);
     }
 
-    /* Inset border frame */
-    #pcm-wrap::before {
-      content: "";
-      position: absolute;
-      inset: 10px;
-      border: 2px solid rgba(20, 16, 12, 0.55);
-      pointer-events: none;
-      z-index: 0;
-    }
+    /* Inset border frame — handled via outline on #pcm-wrap (paints above section bands) */
 
     /* Close button */
     #pcm-close {
@@ -648,7 +642,7 @@
     .pcm-metric-head,
     .pcm-metric-item {
       display: grid;
-      grid-template-columns: 120px 88px minmax(240px, 1.4fr) 52px minmax(140px, 0.7fr);
+      grid-template-columns: 132px 96px minmax(300px, 1.45fr) 60px minmax(160px, 0.75fr);
       column-gap: 12px;
       align-items: center;
     }
@@ -4398,7 +4392,8 @@
 
     function pcmFormatThreshold(m, val) {
       if (val == null) return '';
-      if (m.key === 'height')  return pcmFormatHeight(val);
+      // Height thresholds are stored as real inches after conversion — format accordingly
+      if (m.key === 'height')  return inchesToHeightDisplay(val);
       if (['arm','hand','vertical','broad'].includes(m.key)) return `${val}"`;
       if (m.key === 'weight')  return `${val} lbs`;
       if (m.key === 'bench')   return `${val} reps`;
@@ -4416,6 +4411,27 @@
         if (value <= m.good)  return 'good';
         return 'below';
       }
+    }
+
+    // Convert NFL scout height format (e.g. 6020 = 6'2") to real inches for linear math
+    function scoutToInches(code) {
+      if (code == null || isNaN(code)) return null;
+      const s = String(Math.round(code)).padStart(4, '0');
+      const feet   = parseInt(s[0], 10);
+      const inches = parseInt(s.slice(1, 3), 10);
+      const eighths = parseInt(s[3], 10);
+      return feet * 12 + inches + eighths / 8;
+    }
+
+    // Format real inches back to feet/inches display (e.g. 74.5 → 6'2½")
+    function inchesToHeightDisplay(totalInches) {
+      if (totalInches == null || isNaN(totalInches)) return 'N/A';
+      const feet   = Math.floor(totalInches / 12);
+      const inches = Math.floor(totalInches % 12);
+      const eighths = Math.round((totalInches % 1) * 8);
+      if (!eighths) return `${feet}'${inches}"`;
+      const fracs = { 1:'⅛',2:'¼',3:'⅜',4:'½',5:'⅝',6:'¾',7:'⅞' };
+      return `${feet}'${inches} ${fracs[eighths] || ''}"`;
     }
 
     function pcmBuildZoneTrack(m) {
@@ -4612,13 +4628,14 @@
       const ranges = cardPositionalRangeData[pos] || {};
 
       // Derive peer arrays from the live players array (excludes current player)
+      // Height peers are returned in real inches (not scout format) for linear math
       function buildPeerArr(key) {
         return players
           .filter(p => p.pos === pos && p.name !== player.name)
           .map(p => {
             if (key === 'height') {
               const h = parseInt(p.height, 10);
-              return isNaN(h) ? null : h;
+              return isNaN(h) ? null : scoutToInches(h);
             }
             const v = p[key];
             return (v != null && !isNaN(Number(v))) ? Number(v) : null;
@@ -4638,9 +4655,25 @@
 
       const w = (player.weight > 0) ? player.weight : null;
 
+      // Height is handled separately: scout format → real inches for correct linear math
+      const rH = ranges['height'] || {};
+      const hInches = scoutToInches(heightNum);
+      const heightDef = {
+        key: 'height', label: 'Height', better: 'higher',
+        value:   hInches,
+        display: inchesToHeightDisplay(hInches),
+        groupId: 'pcmGroupSizeLength',
+        description: 'Frame profile.',
+        lowest:  scoutToInches(rH.lowest),
+        good:    scoutToInches(rH.good),
+        great:   scoutToInches(rH.great),
+        highest: scoutToInches(rH.highest),
+        isKey:   rH.isKey || false,
+        peers:   buildPeerArr('height')
+      };
+
       return [
-        makeDef('height',  'Height',       'higher', heightNum,
-          pcmFormatHeight(heightNum),          'pcmGroupSizeLength', 'Frame profile.'),
+        heightDef,
         makeDef('weight',  'Weight',       'higher', w,
           w ? `${w} lbs` : 'N/A',             'pcmGroupSizeLength', 'Body mass profile.'),
         makeDef('arm',     'Arm Length',   'higher', player.arm,
@@ -4673,9 +4706,18 @@
         const { r, g, b } = _hexToRgb(hex);
         return `rgba(${r},${g},${b},${a})`;
       }
+      function _luminance(hex) {
+        const { r, g, b } = _hexToRgb(hex);
+        return (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      }
+      // If secondary is too light (e.g. white, cream, gold), fall back to a
+      // semi-transparent primary so the role pennant and tails stay readable
+      const effectiveSecondary = _luminance(secondaryHex) > 0.70
+        ? _rgba(primaryHex, 0.65)
+        : secondaryHex;
       const vars = {
         '--pcm-team-primary':      primaryHex,
-        '--pcm-team-secondary':    secondaryHex,
+        '--pcm-team-secondary':    effectiveSecondary,
         '--pcm-team-primary-wash': _rgba(primaryHex, 0.20)
       };
       Object.entries(vars).forEach(([k, v]) => rootEl.style.setProperty(k, v));
