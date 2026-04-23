@@ -195,7 +195,7 @@ f1, f2, f3 = st.columns([2, 1, 2])
 with f1:
     pos_filter = st.multiselect("Position", options=POSITION_ORDER, default=[], placeholder="All positions")
 with f2:
-    round_filter = st.multiselect("Round", options=[1, 2, 3, 4, 5, 6], default=[], placeholder="All")
+    round_filter = st.multiselect("Round", options=[1, 2, 3, 4, 5, 6, 7], default=[], placeholder="All")
 with f3:
     search = st.text_input("Search player", placeholder="Type a name…")
 
