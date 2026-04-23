@@ -18,10 +18,16 @@ st.set_page_config(page_title="Player List · DraftMap", layout="wide")
 st.page_link("pages/1_Draft_Chart.py", label="← Chart View", icon=None)
 
 st.markdown("## Player List")
-st.caption(
+st.markdown(
     "Sort any column by clicking its header. "
     "Cell shading reflects positional measurable grades — "
-    ":orange[bright amber] = Great · :orange[soft amber] = Good."
+    "<span style='background:rgba(212,160,23,0.65);color:#fff;"
+    "padding:1px 7px;border-radius:3px;font-size:0.85em;font-weight:600'>"
+    "bright amber</span> = Great &nbsp;·&nbsp; "
+    "<span style='background:rgba(212,160,23,0.30);color:#fff;"
+    "padding:1px 7px;border-radius:3px;font-size:0.85em;font-weight:600'>"
+    "soft amber</span> = Good",
+    unsafe_allow_html=True
 )
 
 # ── Load data ─────────────────────────────────────────────────────────────────

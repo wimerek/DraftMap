@@ -4172,9 +4172,18 @@
     }
     const RD_RANK_RANGE = buildRdRankRange();
 
-    function rankToY(rank, rd, ry, rh) {
+    function rankToY(rank, rd, ry, rh, fallbackIndex, fallbackTotal) {
       const { min, max } = RD_RANK_RANGE[rd];
       const pad = 24;
+
+      // rank=0 means unranked — distribute evenly across the zone using caller-supplied index
+      if (rank === 0) {
+        if (fallbackTotal != null && fallbackTotal > 1) {
+          const t = fallbackIndex / (fallbackTotal - 1);
+          return ry + pad + t * (rh - 2 * pad);
+        }
+        return ry + rh / 2;
+      }
 
       if (max === min) return ry + rh / 2;
 
@@ -4219,8 +4228,9 @@
       const MIN_GAP = DOT_R * 2 + 1; // 11px clearance
       const PAD = DOT_R + 2;       // keep dots off row edges
 
-      let pts = dotData.map(p => ({
-        y: rankToY(p.rank, p.rd, ry, rh),
+      const total = dotData.length;
+      let pts = dotData.map((p, i) => ({
+        y: rankToY(p.rank, p.rd, ry, rh, i, total),
         player: p
       }));
 
