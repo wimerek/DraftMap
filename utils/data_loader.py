@@ -87,6 +87,10 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
             "s2":     str(f.get("s2",                  "N/A")),
             "s3":     str(f.get("s3",                  "N/A")),
             "school": str(f.get("school",              "")),
+            # Draft result fields — populated in real time during the draft
+            "rd_drafted":   f.get("round drafted"),
+            "pick_drafted": f.get("pick drafted"),
+            "team_drafted": str(f.get("team drafted", "")),
             # Combine measurables — nullable floats, None if not recorded
             "arm":    f.get("arm length (inches)"),
             "hand":   f.get("hand size (inches)"),
@@ -112,13 +116,20 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
         if _col in df.columns:
             df[_col] = pd.to_numeric(df[_col], errors="coerce")
 
+    # Drafted flag — True if any draft result field is populated
+    df["drafted"] = (
+        df["rd_drafted"].notna() |
+        df["pick_drafted"].notna() |
+        (df["team_drafted"].str.strip() != "")
+    )
+
     # Any role that doesn't match a known band label falls through to Balanced
     # in the chart JS — no remapping needed here.
 
     return df
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=60)
 def load_rankings(year: int = 2026) -> pd.DataFrame:
     """
     Load player rankings for a given draft year.

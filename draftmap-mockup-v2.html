@@ -133,6 +133,47 @@
       font-style: italic;
     }
 
+    .live-draft-btn {
+      padding: 6px 13px;
+      border: 1.5px solid rgba(74, 98, 116, 0.35);
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      background: transparent;
+      color: #4A6274;
+      font-family: 'Inter', sans-serif;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .live-draft-btn:hover {
+      background: rgba(11, 34, 57, 0.06);
+      border-color: #4A6274;
+      color: #0B2239;
+    }
+    .live-draft-btn.active {
+      background: #0B2239;
+      border-color: #0B2239;
+      color: #fff;
+    }
+    .live-dot-indicator {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6B7280;
+      flex-shrink: 0;
+      transition: background 0.2s ease;
+    }
+    .live-draft-btn.active .live-dot-indicator {
+      background: #34d399;
+    }
+
     .view-toggle-btn {
       padding: 6px 13px;
       border: 1.5px solid rgba(74, 98, 116, 0.35);
@@ -861,6 +902,10 @@
         <button class="btn" data-view="defense">Defense</button>
       </div>
       <div class="year-label">2026 Draft Class</div>
+      <button id="live-draft-btn" class="live-draft-btn" title="Grey out drafted players">
+        <span class="live-dot-indicator"></span>
+        Live Draft
+      </button>
       <div class="chart-hint">Scroll or pinch to zoom &nbsp;·&nbsp; drag to pan &nbsp;·&nbsp; click a dot to open player details (double-tap on mobile)</div>
     </div>
 
@@ -4085,6 +4130,7 @@
 
     let currentView = 'all';
     let zoomLevel = 2;
+    let liveMode = false; // Live Draft mode: greys out drafted players when enabled
 
     // Touch device detection — used to choose single-click vs double-tap for card
     const IS_TOUCH = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -5313,12 +5359,17 @@
           zoomLevel === 1 ? 7 :
             8.75;
 
+      // Live Draft mode: drafted players fade to a faint cream — still clickable
+      const isDrafted = liveMode && player.drafted;
+      const dotFill   = isDrafted ? 'rgba(210, 200, 185, 0.35)' : sc.fill;
+      const dotStroke = isDrafted ? 'rgba(160, 150, 135, 0.45)' : '#4A4A4A';
+
       const circle = svgEl('circle', {
         cx: x,
         cy: y,
         r: String(dotRadius),
-        fill: sc.fill,
-        stroke: '#4A4A4A',
+        fill: dotFill,
+        stroke: dotStroke,
         'stroke-width': zoomLevel <= 1 ? '1.5' : '2',
         cursor: 'pointer'
       });
@@ -5346,7 +5397,7 @@
       });
       svg.appendChild(circle);
 
-      if (showLabel) {
+      if (showLabel && !isDrafted) {
         const lineH = 11;
         // Stagger: even idx → label right, odd → label left
         const goRight = (idx % 2 === 0);
@@ -5492,6 +5543,13 @@
       });
     });
 
+
+    // ── Live Draft mode toggle ────────────────────────────────────────────
+    document.getElementById('live-draft-btn').addEventListener('click', () => {
+      liveMode = !liveMode;
+      document.getElementById('live-draft-btn').classList.toggle('active', liveMode);
+      drawChart();
+    });
 
     // ── Zoom: wheel + pinch → progressively reveal detail ─────────────────
     let zoomTimer = null;

@@ -91,6 +91,8 @@ def row_to_player(row: pd.Series) -> dict:
         "s2":     safe_str(row.get("s2")),
         "s3":     safe_str(row.get("s3")),
         "school": safe_str(row.get("school")),
+        # Draft result — True if pick has been recorded in Airtable
+        "drafted": bool(row.get("drafted", False)),
         # Combine measurables — null when not recorded
         "arm":    safe_float(row.get("arm")),
         "hand":   safe_float(row.get("hand")),
