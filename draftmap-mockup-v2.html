@@ -4161,11 +4161,16 @@
       const ranges = {};
       for (let rd = 1; rd <= 7; rd++) {
         const rdPlayers = players.filter(p => p.rd === rd);
-        if (rdPlayers.length > 0) {
-          const ranks = rdPlayers.map(p => p.rank);
+        // Exclude rank=0 (unranked) so they don't drag min down and
+        // compress all ranked players into a sliver at the bottom of the zone.
+        // Rank=0 players use the fallback index distribution in rankToY instead.
+        const ranked = rdPlayers.filter(p => p.rank > 0);
+        if (ranked.length > 0) {
+          const ranks = ranked.map(p => p.rank);
           ranges[rd] = { min: Math.min(...ranks), max: Math.max(...ranks) };
         } else {
-          ranges[rd] = { min: 1, max: 1 };
+          // All unranked — rankToY fallback handles distribution; sentinel values
+          ranges[rd] = { min: 0, max: 0 };
         }
       }
       return ranges;
