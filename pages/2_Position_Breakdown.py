@@ -3,9 +3,9 @@
 
 Phase 4 of DraftMap. Cell shading mirrors the positional grade thresholds
 used in the player popup card (cardPositionalRangeData in the chart HTML).
-  Amber shading  = Great for that position
-  Teal shading   = Good for that position
-  No shading     = Average / no data
+  Bright amber shading = Great for that position
+  Soft amber shading   = Good for that position
+  No shading           = Average / no data
 """
 
 import streamlit as st
@@ -21,7 +21,7 @@ st.markdown("## Player List")
 st.caption(
     "Sort any column by clicking its header. "
     "Cell shading reflects positional measurable grades — "
-    ":orange[amber] = Great · :blue[teal] = Good."
+    ":orange[bright amber] = Great · :orange[soft amber] = Good."
 )
 
 # ── Load data ─────────────────────────────────────────────────────────────────
