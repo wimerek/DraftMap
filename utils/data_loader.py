@@ -71,6 +71,12 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
       "s1" / "s2" / "s3"  → s1, s2, s3
       "School"             → school
     """
+    def _scalar(val, default=None):
+        """Unwrap Airtable list values (linked records / number fields return [val])."""
+        if isinstance(val, list):
+            return val[0] if val else default
+        return val if val is not None else default
+
     rows = []
     for r in records:
         # Lowercase all keys for case-insensitive lookup
@@ -87,10 +93,10 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
             "s2":     str(f.get("s2",                  "N/A")),
             "s3":     str(f.get("s3",                  "N/A")),
             "school": str(f.get("school",              "")),
-            # Draft result fields — populated in real time during the draft
-            "rd_drafted":   f.get("round drafted"),
-            "pick_drafted": f.get("pick drafted"),
-            "team_drafted": str(f.get("team drafted", "")),
+            # Draft result fields — unwrap Airtable lists, populated in real time
+            "rd_drafted":   _scalar(f.get("round drafted")),
+            "pick_drafted": _scalar(f.get("pick drafted")),
+            "team_drafted": str(_scalar(f.get("team drafted"), "")),
             # Combine measurables — nullable floats, None if not recorded
             "arm":    f.get("arm length (inches)"),
             "hand":   f.get("hand size (inches)"),
@@ -110,6 +116,10 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
     df["rd"]     = pd.to_numeric(df["rd"],     errors="coerce").fillna(0).astype(int)
     df["rank"]   = pd.to_numeric(df["rank"],   errors="coerce").fillna(0).astype(int)
     df["weight"] = pd.to_numeric(df["weight"], errors="coerce").fillna(0).astype(int)
+
+    # Draft result numeric fields — nullable floats (NaN = not drafted, do NOT fill with 0)
+    df["rd_drafted"]   = pd.to_numeric(df["rd_drafted"],   errors="coerce")
+    df["pick_drafted"] = pd.to_numeric(df["pick_drafted"],  errors="coerce")
 
     # Measurables stay as nullable floats (NaN where not recorded — do NOT fill with 0)
     for _col in ["arm", "hand", "forty", "split10", "vertical", "broad", "cone3", "shuttle", "bench"]:
