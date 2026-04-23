@@ -558,6 +558,46 @@
     }
     #pcm-close:hover { background: rgba(20, 16, 12, 0.14); }
 
+    /* Draft result badge — upper right of card header, visible only when player is picked */
+    #pcmDraftResult {
+      position: absolute;
+      top: 4px;
+      right: 48px;
+      background: rgba(30, 26, 22, 0.06);
+      border: 1px solid rgba(30, 26, 22, 0.18);
+      border-radius: 6px;
+      padding: 5px 9px 6px;
+      display: none;
+    }
+    .pcm-draft-badge-label {
+      font-size: 7.5px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.9px;
+      color: var(--pcm-text-muted);
+      margin-bottom: 4px;
+    }
+    .pcm-draft-table {
+      border-collapse: collapse;
+    }
+    .pcm-draft-table td {
+      padding: 1.5px 0;
+      font-size: 10px;
+      color: var(--pcm-text-primary);
+      line-height: 1.2;
+    }
+    .pcm-draft-table td:first-child {
+      color: var(--pcm-text-muted);
+      font-size: 8px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      padding-right: 8px;
+    }
+    .pcm-draft-table td:last-child {
+      font-weight: 700;
+    }
+
     /* Card ID */
     .pcm-card-id {
       font-family: 'Oswald', sans-serif;
@@ -960,6 +1000,15 @@
       <!-- Header -->
       <div style="position:relative; padding: 4px 2px 0;">
         <div class="pcm-card-id" id="pcmCardId"></div>
+        <!-- Draft result badge: shown when player has been picked -->
+        <div id="pcmDraftResult">
+          <div class="pcm-draft-badge-label">Drafted</div>
+          <table class="pcm-draft-table">
+            <tr><td>Team</td><td id="pcmTeamDrafted">—</td></tr>
+            <tr><td>Round</td><td id="pcmRdDrafted">—</td></tr>
+            <tr><td>Pick</td><td id="pcmPickDrafted">—</td></tr>
+          </table>
+        </div>
         <div style="text-align:center; margin: 2px 48px 8px;">
           <h1 class="pcm-player-name" id="pcmPlayerName"></h1>
         </div>
@@ -4830,6 +4879,17 @@
         (player.s2 && player.s2 !== 'N/A') ? player.s2 : '—';
       document.getElementById('pcmS3').textContent =
         (player.s3 && player.s3 !== 'N/A') ? player.s3 : '—';
+
+      // Draft result badge
+      const draftBadge = document.getElementById('pcmDraftResult');
+      if (player.drafted) {
+        document.getElementById('pcmTeamDrafted').textContent  = player.team_drafted || '—';
+        document.getElementById('pcmRdDrafted').textContent    = player.rd_drafted   != null ? `Rd ${player.rd_drafted}`  : '—';
+        document.getElementById('pcmPickDrafted').textContent  = player.pick_drafted != null ? `#${player.pick_drafted}` : '—';
+        draftBadge.style.display = 'block';
+      } else {
+        draftBadge.style.display = 'none';
+      }
 
       // Peer label (e.g. "2026 WR class")
       bd.querySelectorAll('.pcm-peer-label').forEach(el => {

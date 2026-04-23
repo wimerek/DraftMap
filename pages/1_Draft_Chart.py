@@ -92,7 +92,10 @@ def row_to_player(row: pd.Series) -> dict:
         "s3":     safe_str(row.get("s3")),
         "school": safe_str(row.get("school")),
         # Draft result — True if pick has been recorded in Airtable
-        "drafted": bool(row.get("drafted", False)),
+        "drafted":      bool(row.get("drafted", False)),
+        "team_drafted": safe_str(row.get("team_drafted"), ""),
+        "rd_drafted":   safe_int(row.get("rd_drafted")) if pd.notna(row.get("rd_drafted", None)) else None,
+        "pick_drafted": safe_int(row.get("pick_drafted")) if pd.notna(row.get("pick_drafted", None)) else None,
         # Combine measurables — null when not recorded
         "arm":    safe_float(row.get("arm")),
         "hand":   safe_float(row.get("hand")),

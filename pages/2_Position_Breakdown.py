@@ -38,6 +38,7 @@ df = load_rankings(2026)
 
 DISPLAY_COLS = [
     "pos", "rd", "rank", "name", "school",
+    "team_drafted", "rd_drafted", "pick_drafted",
     "height", "weight",
     "arm", "hand",
     "forty", "split10", "vertical", "broad", "cone3", "shuttle", "bench",
@@ -226,7 +227,10 @@ st.dataframe(
         "rd":       st.column_config.NumberColumn("Rd",    width="small",  format="%d"),
         "rank":     st.column_config.NumberColumn("Rank",  width="small",  format="%d"),
         "name":     st.column_config.TextColumn("Player",  width="medium"),
-        "school":   st.column_config.TextColumn("School",  width="medium"),
+        "school":       st.column_config.TextColumn("School",       width="medium"),
+        "team_drafted": st.column_config.TextColumn("Team",         width="small"),
+        "rd_drafted":   st.column_config.NumberColumn("Rd Drafted", width="small",  format="%d"),
+        "pick_drafted": st.column_config.NumberColumn("Pick",       width="small",  format="%d"),
         "height":   st.column_config.TextColumn("Height",  width="small"),
         "weight":   st.column_config.NumberColumn("Wt",    width="small",  format="%d"),
         "arm":      st.column_config.NumberColumn("Arm",   width="small",  format="%.2f"),
