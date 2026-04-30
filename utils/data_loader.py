@@ -139,7 +139,7 @@ def _records_to_df(records: list[dict]) -> pd.DataFrame:
     return df
 
 
-@st.cache_data(ttl=60)
+@st.cache_data(ttl=300)
 def load_rankings(year: int = 2026) -> pd.DataFrame:
     """
     Load player rankings for a given draft year.
